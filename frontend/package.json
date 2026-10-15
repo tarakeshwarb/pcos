@@ -9,6 +9,7 @@
     "preview": "vite preview --port 4173 --strictPort"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "framer-motion": "^11.11.17",
     "pdfjs-dist": "^4.10.38",
     "react": "^18.3.1",

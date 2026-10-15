@@ -1,82 +1,114 @@
 import { questionnaire, runPipeline } from './ruleEngine.js'
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { supabase } from './supabase.js'
 
 export async function fetchQuestionnaire() {
-  try {
-    const res = await fetch(`${API_BASE}/api/questionnaire`, { signal: AbortSignal.timeout(2500) })
-    if (!res.ok) throw new Error('bad response')
-    return { data: await res.json(), source: 'backend' }
-  } catch {
-    return { data: questionnaire, source: 'local' }
-  }
+  return { data: questionnaire, source: 'local' }
 }
 
 export async function fetchResult(id) {
-  const res = await fetch(`${API_BASE}/api/result/${id}`, { signal: AbortSignal.timeout(4000) })
-  if (!res.ok) throw new Error('not found')
-  return { ...(await res.json()), source: 'backend' }
+  try {
+    const { data, error } = await supabase
+      .from('submissions')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (error || !data) throw error || new Error('Not found')
+    return { ...data, source: 'supabase' }
+  } catch (err) {
+    console.warn('Could not fetch from Supabase:', err)
+    throw err
+  }
 }
 
 export async function registerPatient(payload) {
-  // Real backend table now (Ishi's call), but registration must never block
-  // the flow -- if the backend is unreachable the page still proceeds using
-  // its existing sessionStorage handoff, same fallback shape as elsewhere
-  // in this file. Nothing here is ever sent to an AI provider or any
-  // service outside this project's own database.
   try {
-    const res = await fetch(`${API_BASE}/api/registration`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(4000),
-    })
-    if (!res.ok) throw new Error('bad response')
-    return { ...(await res.json()), source: 'backend' }
-  } catch {
+    const record = {
+      full_name: payload.full_name,
+      email: payload.email,
+      dob: payload.dob || null,
+      age: payload.age ? parseInt(payload.age, 10) : null,
+      demographics: payload.demographics || {},
+      region_preference: payload.region_preference || null,
+      diet_type: payload.diet_type || null,
+      extracted_report: payload.extracted_report || null,
+    }
+
+    const { data, error } = await supabase
+      .from('registrations')
+      .insert([record])
+      .select()
+      .single()
+
+    if (error) throw error
+    return { ...data, source: 'supabase' }
+  } catch (err) {
+    console.warn('Supabase registration error, falling back locally:', err)
     return { source: 'local' }
   }
 }
 
 export async function submitFeedback(payload) {
-  // Same best-effort pattern as registerPatient: never blocks the UI, and
-  // never sends anything anywhere except this project's own backend.
   try {
-    const res = await fetch(`${API_BASE}/api/feedback`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(4000),
-    })
-    if (!res.ok) throw new Error('bad response')
-    return { ...(await res.json()), source: 'backend' }
-  } catch {
+    const record = {
+      rating: payload.rating ? parseInt(payload.rating, 10) : null,
+      comments: payload.comments || '',
+      context: payload.context || null,
+      contact_email: payload.contact_email || null,
+    }
+
+    const { data, error } = await supabase
+      .from('feedback')
+      .insert([record])
+      .select()
+      .single()
+
+    if (error) throw error
+    return { ...data, source: 'supabase' }
+  } catch (err) {
+    console.warn('Supabase feedback error, falling back locally:', err)
     return { source: 'local' }
   }
 }
 
 export async function submitAssessment(payload) {
+  // Compute deterministic scores & diet recommendations locally
+  const result = runPipeline(payload.answers, payload.region_preference, payload.diet_type)
+  const defaultVersion = questionnaire.meta?.version || '1.0.0'
+
   try {
-    const res = await fetch(`${API_BASE}/api/submit`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(4000),
-    })
-    if (!res.ok) throw new Error('bad response')
-    const data = await res.json()
-    return { ...data, source: 'backend' }
-  } catch {
-    // Backend unreachable -- compute locally with the identical rule engine
-    // so the demo never blocks on infrastructure being up.
-    const result = runPipeline(payload.answers, payload.region_preference, payload.diet_type)
+    const record = {
+      demographics: payload.demographics || {},
+      answers: payload.answers || {},
+      primary_goals: payload.primary_goals || [],
+      region_preference: payload.region_preference || null,
+      diet_type: payload.diet_type || null,
+      scores: result.scores,
+      classification: result.classification,
+      recommendation: result.recommendation,
+      questionnaire_version: defaultVersion,
+    }
+
+    const { data, error } = await supabase
+      .from('submissions')
+      .insert([record])
+      .select()
+      .single()
+
+    if (error) throw error
+
+    return {
+      ...data,
+      source: 'supabase',
+    }
+  } catch (err) {
+    console.warn('Supabase submit error, falling back to local result:', err)
     return {
       id: `local-${Date.now()}`,
       created_at: new Date().toISOString(),
       scores: result.scores,
       classification: result.classification,
       recommendation: result.recommendation,
-      questionnaire_version: questionnaire.meta.version,
+      questionnaire_version: defaultVersion,
       source: 'local',
       _localPayload: payload,
     }
