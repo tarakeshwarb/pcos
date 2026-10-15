@@ -1,0 +1,1709 @@
+{
+  "meta": {
+    "title": "PCOS/PMOS Phenotype Grouped Questionnaire & Diagnostic Scoring",
+    "source_document": "PCOS_Phenotype_Grouped_Questionnaire_v3.1.docx",
+    "version": "1.0.0"
+  },
+  "demographics": [
+    {
+      "id": "occupation",
+      "label": "Current Occupation & Shift Schedule (e.g., night shifts, desk job)",
+      "type": "text",
+      "source": "Section 1, Row 3"
+    },
+    {
+      "id": "relationship_status",
+      "label": "Marital / Relationship Status & Pregnancy Goals",
+      "type": "text",
+      "source": "Section 1, Row 4"
+    },
+    {
+      "id": "ethnicity",
+      "label": "Ethnicity / Geographic Origin",
+      "type": "text",
+      "source": "Section 1, Row 5"
+    },
+    {
+      "id": "living_environment",
+      "label": "Living Environment",
+      "type": "select",
+      "options": [
+        "Urban - Polluted",
+        "Urban - Not polluted",
+        "Rural - Polluted",
+        "Rural - Not polluted"
+      ],
+      "source": "Section 1, Row 6"
+    },
+    {
+      "id": "pcos_diagnosis_age",
+      "label": "When was PCOS diagnosed (age)?",
+      "type": "number",
+      "source": "Section 1, Row 8"
+    },
+    {
+      "id": "region_preference",
+      "label": "Dietary region preference",
+      "type": "select",
+      "options": [
+        "South Indian",
+        "North Indian",
+        "East Indian",
+        "West Indian"
+      ],
+      "source": "Section 4 header (Targeted South Indian & North Indian Nutrition Guidelines)"
+    },
+    {
+      "id": "diet_type",
+      "label": "Diet type",
+      "type": "select",
+      "options": [
+        "Vegetarian",
+        "Eggetarian",
+        "Non-Vegetarian",
+        "Vegan"
+      ],
+      "source": "Section 4, Table 9 header (Veg / Non-Veg / Vegan plans)"
+    }
+  ],
+  "primary_goals": [
+    "Get my periods more regular",
+    "Clear up adult acne",
+    "Reduce excess facial or body hair",
+    "Help my body respond better to insulin",
+    "Lower my blood sugar levels",
+    "Balance my hormone levels",
+    "Improve my chances of ovulating & getting pregnant",
+    "Prepare my body for pregnancy",
+    "Overcome constant tiredness & brain fog",
+    "Sleep better",
+    "Lose weight around my belly",
+    "Reduce bloating & other gut issues",
+    "Feel calmer & less stressed",
+    "Have more energy & stamina"
+  ],
+  "phenotypes": {
+    "adrenal": {
+      "label": "Adrenal PCOS (Stress-Driven)",
+      "source": "Section 2, Table 1",
+      "questions": [
+        {
+          "id": "adrenal_vitals",
+          "category": "Clinical Evaluation",
+          "label": "Blood Pressure, Resting Heart Rate & SpO2",
+          "reference": "120/80 mmHg / 60-100 bpm / >95%",
+          "fields": [
+            {
+              "key": "systolic",
+              "label": "Systolic BP",
+              "type": "number",
+              "unit": "mmHg"
+            },
+            {
+              "key": "diastolic",
+              "label": "Diastolic BP",
+              "type": "number",
+              "unit": "mmHg"
+            },
+            {
+              "key": "heart_rate",
+              "label": "Resting Heart Rate",
+              "type": "number",
+              "unit": "bpm"
+            },
+            {
+              "key": "spo2",
+              "label": "SpO2",
+              "type": "number",
+              "unit": "%"
+            }
+          ],
+          "rule": {
+            "op": "any",
+            "rules": [
+              {
+                "op": "outside",
+                "field": "systolic",
+                "range": [
+                  90,
+                  120
+                ]
+              },
+              {
+                "op": "outside",
+                "field": "diastolic",
+                "range": [
+                  60,
+                  80
+                ]
+              },
+              {
+                "op": "outside",
+                "field": "heart_rate",
+                "range": [
+                  60,
+                  100
+                ]
+              },
+              {
+                "op": "lt",
+                "field": "spo2",
+                "value": 95
+              }
+            ]
+          },
+          "description": "Basic vitals -- high blood pressure or resting heart rate with low oxygen can point to HPA-axis (stress) overactivation."
+        },
+        {
+          "id": "adrenal_dheas",
+          "category": "Biochemical Evaluation",
+          "label": "DHEA-S (Dehydroepiandrosterone Sulfate)",
+          "reference": "83-377 µg/dL (age 18-30, Mayo Clinic Laboratories; isolated >350 = Adrenal)",
+          "fields": [
+            {
+              "key": "dhea_s",
+              "label": "DHEA-S",
+              "type": "number",
+              "unit": "µg/dL"
+            }
+          ],
+          "rule": {
+            "op": "outside",
+            "field": "dhea_s",
+            "range": [
+              83,
+              377
+            ]
+          },
+          "description": "DHEA-S is an adrenal androgen; a level far above normal is a strong sign of the Adrenal phenotype. Reference range is age-dependent and narrows with age (Mayo Clinic Laboratories, test DHES1); levels above roughly 600 µg/dL specifically warrant prompt medical evaluation for a possible androgen-secreting adrenal tumor."
+        },
+        {
+          "id": "adrenal_cortisol",
+          "category": "Biochemical Evaluation",
+          "label": "Fasting Cortisol (AM) / Salivary Cortisol Curve",
+          "reference": "5-25 µg/dL (AM, 6-10:30am; Mayo Clinic Laboratories)",
+          "fields": [
+            {
+              "key": "cortisol_am",
+              "label": "AM Cortisol",
+              "type": "number",
+              "unit": "µg/dL"
+            }
+          ],
+          "rule": {
+            "op": "outside",
+            "field": "cortisol_am",
+            "range": [
+              5,
+              25
+            ]
+          },
+          "description": "Cortisol is your main stress hormone; an abnormal morning level suggests HPA-axis dysregulation."
+        },
+        {
+          "id": "adrenal_pss",
+          "category": "Root Cause Analysis",
+          "label": "Perceived Stress Scale (PSS-10)",
+          "reference": "Cohen, Kamarck & Mermelstein, 1983 -- 0-13 low stress, 14-26 moderate, 27-40 high stress",
+          "fields": [
+            {
+              "key": "pss_1",
+              "label": "In the last month, how often were you upset by something that happened unexpectedly?",
+              "type": "scale",
+              "min": 0,
+              "max": 4,
+              "labels": [
+                "Never",
+                "Almost Never",
+                "Sometimes",
+                "Fairly Often",
+                "Very Often"
+              ]
+            },
+            {
+              "key": "pss_2",
+              "label": "In the last month, how often did you feel unable to control the important things in your life?",
+              "type": "scale",
+              "min": 0,
+              "max": 4,
+              "labels": [
+                "Never",
+                "Almost Never",
+                "Sometimes",
+                "Fairly Often",
+                "Very Often"
+              ]
+            },
+            {
+              "key": "pss_3",
+              "label": "In the last month, how often did you feel nervous or stressed?",
+              "type": "scale",
+              "min": 0,
+              "max": 4,
+              "labels": [
+                "Never",
+                "Almost Never",
+                "Sometimes",
+                "Fairly Often",
+                "Very Often"
+              ]
+            },
+            {
+              "key": "pss_4",
+              "label": "In the last month, how often did you feel confident about your ability to handle your personal problems?",
+              "type": "scale",
+              "min": 0,
+              "max": 4,
+              "labels": [
+                "Never",
+                "Almost Never",
+                "Sometimes",
+                "Fairly Often",
+                "Very Often"
+              ]
+            },
+            {
+              "key": "pss_5",
+              "label": "In the last month, how often did you feel that things were going your way?",
+              "type": "scale",
+              "min": 0,
+              "max": 4,
+              "labels": [
+                "Never",
+                "Almost Never",
+                "Sometimes",
+                "Fairly Often",
+                "Very Often"
+              ]
+            },
+            {
+              "key": "pss_6",
+              "label": "In the last month, how often did you find you could not cope with everything you had to do?",
+              "type": "scale",
+              "min": 0,
+              "max": 4,
+              "labels": [
+                "Never",
+                "Almost Never",
+                "Sometimes",
+                "Fairly Often",
+                "Very Often"
+              ]
+            },
+            {
+              "key": "pss_7",
+              "label": "In the last month, how often were you able to control irritations in your life?",
+              "type": "scale",
+              "min": 0,
+              "max": 4,
+              "labels": [
+                "Never",
+                "Almost Never",
+                "Sometimes",
+                "Fairly Often",
+                "Very Often"
+              ]
+            },
+            {
+              "key": "pss_8",
+              "label": "In the last month, how often did you feel on top of things?",
+              "type": "scale",
+              "min": 0,
+              "max": 4,
+              "labels": [
+                "Never",
+                "Almost Never",
+                "Sometimes",
+                "Fairly Often",
+                "Very Often"
+              ]
+            },
+            {
+              "key": "pss_9",
+              "label": "In the last month, how often were you angered by things outside of your control?",
+              "type": "scale",
+              "min": 0,
+              "max": 4,
+              "labels": [
+                "Never",
+                "Almost Never",
+                "Sometimes",
+                "Fairly Often",
+                "Very Often"
+              ]
+            },
+            {
+              "key": "pss_10",
+              "label": "In the last month, how often did difficulties pile up so high you could not overcome them?",
+              "type": "scale",
+              "min": 0,
+              "max": 4,
+              "labels": [
+                "Never",
+                "Almost Never",
+                "Sometimes",
+                "Fairly Often",
+                "Very Often"
+              ]
+            }
+          ],
+          "computed": {
+            "pss_total": "pss_1 + pss_2 + pss_3 + (4-pss_4) + (4-pss_5) + pss_6 + (4-pss_7) + (4-pss_8) + pss_9 + pss_10"
+          },
+          "rule": {
+            "op": "gte",
+            "field": "pss_total",
+            "value": 27
+          },
+          "description": "The Perceived Stress Scale (PSS-10) is a widely used, validated 10-question tool measuring how stressful your life has felt over the past month. Answer each based on how often you felt that way -- there are no right or wrong answers."
+        },
+        {
+          "id": "adrenal_phq2",
+          "category": "Root Cause Analysis",
+          "label": "PHQ-2 (Depression Screener)",
+          "reference": "Kroenke, Spitzer & Williams, 2003 -- score >= 3 suggests further evaluation",
+          "fields": [
+            {
+              "key": "phq2_1",
+              "label": "Over the last 2 weeks, how often have you had little interest or pleasure in doing things?",
+              "type": "scale",
+              "min": 0,
+              "max": 3,
+              "labels": [
+                "Not at all",
+                "Several days",
+                "More than half the days",
+                "Nearly every day"
+              ]
+            },
+            {
+              "key": "phq2_2",
+              "label": "Over the last 2 weeks, how often have you been feeling down, depressed, or hopeless?",
+              "type": "scale",
+              "min": 0,
+              "max": 3,
+              "labels": [
+                "Not at all",
+                "Several days",
+                "More than half the days",
+                "Nearly every day"
+              ]
+            }
+          ],
+          "computed": {
+            "phq2_total": "phq2_1 + phq2_2"
+          },
+          "rule": {
+            "op": "gte",
+            "field": "phq2_total",
+            "value": 3
+          },
+          "description": "The PHQ-2 is a standard 2-question clinical screening tool for low mood. It's a screen, not a diagnosis -- a higher score just means it's worth talking to a doctor or counselor about how you've been feeling lately."
+        },
+        {
+          "id": "adrenal_sleep",
+          "category": "Root Cause Analysis",
+          "label": "Sleep Duration & Quality (onset, awakenings, wake time)",
+          "reference": "7-9 hours continuous sleep",
+          "fields": [
+            {
+              "key": "sleep_hours",
+              "label": "Average sleep (hours)",
+              "type": "number",
+              "unit": "hrs",
+              "min": 0,
+              "max": 14,
+              "step": 0.5
+            },
+            {
+              "key": "sleep_poor_quality",
+              "label": "Frequent awakenings / poor quality sleep?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "any",
+            "rules": [
+              {
+                "op": "outside",
+                "field": "sleep_hours",
+                "range": [
+                  7,
+                  9
+                ]
+              },
+              {
+                "op": "eq",
+                "field": "sleep_poor_quality",
+                "value": "yes"
+              }
+            ]
+          },
+          "description": "Short or broken sleep raises cortisol and worsens adrenal-driven symptoms."
+        },
+        {
+          "id": "adrenal_fatigue",
+          "category": "Root Cause Analysis",
+          "label": "Fatigue (feeling worn out easily)",
+          "reference": "Feeling worn out easily",
+          "fields": [
+            {
+              "key": "adrenal_fatigue",
+              "label": "Do you feel worn out easily?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "adrenal_fatigue",
+            "value": "yes"
+          },
+          "description": "Feeling worn out even after rest can be a sign of ongoing stress-axis overload."
+        },
+        {
+          "id": "adrenal_worried",
+          "category": "Root Cause Analysis",
+          "label": "Worried (about past, future, health)",
+          "reference": "About past, future, health",
+          "fields": [
+            {
+              "key": "worried",
+              "label": "Do you feel frequently worried?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "worried",
+            "value": "yes"
+          },
+          "description": "Frequent worry about the past, future, or health is a common stress-axis symptom."
+        },
+        {
+          "id": "adrenal_concentration",
+          "category": "Root Cause Analysis",
+          "label": "Poor concentration",
+          "reference": "Inability to focus long",
+          "fields": [
+            {
+              "key": "poor_concentration",
+              "label": "Poor concentration / hard to focus?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "poor_concentration",
+            "value": "yes"
+          },
+          "description": "Trouble focusing for long periods can be linked to chronic stress."
+        },
+        {
+          "id": "adrenal_breathing",
+          "category": "Root Cause Analysis",
+          "label": "Shallow breathing",
+          "reference": "Chest breathing > 20 cycles/min",
+          "fields": [
+            {
+              "key": "shallow_breathing",
+              "label": "Shallow / chest breathing?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "shallow_breathing",
+            "value": "yes"
+          },
+          "description": "Fast, shallow chest-breathing (over 20 breaths/min) is a physical sign of a stressed nervous system."
+        },
+        {
+          "id": "adrenal_moods",
+          "category": "Root Cause Analysis",
+          "label": "Frequent mood swings",
+          "reference": "Sudden irritability, anger, or mood drops",
+          "fields": [
+            {
+              "key": "mood_swings",
+              "label": "Frequent mood swings?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "mood_swings",
+            "value": "yes"
+          },
+          "description": "Sudden irritability, anger, or low mood can reflect stress-hormone swings."
+        }
+      ]
+    },
+    "hormonal": {
+      "label": "Hormonal PCOS (Ovarian / Post-Pill)",
+      "source": "Section 2, Table 2",
+      "questions": [
+        {
+          "id": "hormonal_cycle",
+          "category": "Clinical Evaluation",
+          "label": "Menstrual Cycle Length & Regularity",
+          "reference": "Regular 21-35 day ovulatory cycles (abnormal > 45 days) -- 2018 International PCOS Guideline / Rotterdam oligoanovulation definition",
+          "fields": [
+            {
+              "key": "cycle_length_days",
+              "label": "Average cycle length (days)",
+              "type": "number",
+              "unit": "days"
+            },
+            {
+              "key": "cycle_absent",
+              "label": "Are periods absent (amenorrhea) for over 45 days?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "any",
+            "rules": [
+              {
+                "op": "outside",
+                "field": "cycle_length_days",
+                "range": [
+                  21,
+                  35
+                ]
+              },
+              {
+                "op": "eq",
+                "field": "cycle_absent",
+                "value": "yes"
+              }
+            ]
+          },
+          "description": "Cycles shorter than 21 or longer than 35 days point toward ovarian/hormonal imbalance."
+        },
+        {
+          "id": "hormonal_hirsutism",
+          "category": "Clinical Evaluation",
+          "label": "Hirsutism Severity (excess facial/body hair on chest, chin, abdomen)",
+          "reference": "Ferriman-Gallwey score < 8 (None)",
+          "fields": [
+            {
+              "key": "hirsutism_severity",
+              "label": "Hirsutism severity",
+              "type": "select",
+              "options": [
+                "None",
+                "Mild",
+                "Severe"
+              ]
+            }
+          ],
+          "rule": {
+            "op": "in",
+            "field": "hirsutism_severity",
+            "values": [
+              "Mild",
+              "Severe"
+            ]
+          },
+          "description": "Excess coarse hair on the face, chest, chin, or abdomen is a classic sign of high androgens."
+        },
+        {
+          "id": "hormonal_alopecia",
+          "category": "Clinical Evaluation",
+          "label": "Pattern Hair Loss / Androgenic Alopecia (scalp thinning)",
+          "reference": "Absence of hair thinning",
+          "fields": [
+            {
+              "key": "alopecia",
+              "label": "Scalp thinning / pattern hair loss?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "alopecia",
+            "value": "yes"
+          },
+          "description": "Thinning hair on the scalp in a male-pattern distribution can be androgen-driven."
+        },
+        {
+          "id": "hormonal_acne",
+          "category": "Clinical Evaluation",
+          "label": "Acne Characteristics (cystic, jawline, adult-onset)",
+          "reference": "Clear skin / absence of inflammatory acne",
+          "fields": [
+            {
+              "key": "sym_acne",
+              "label": "Cystic / jawline / adult-onset acne?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "sym_acne",
+            "value": "yes"
+          },
+          "shared_field": "sym_acne",
+          "description": "Deep, cystic, or jawline acne that starts in adulthood is often androgen-linked."
+        },
+        {
+          "id": "hormonal_ultrasound",
+          "category": "Clinical Evaluation",
+          "label": "Pelvic Ultrasound Findings (polycystic ovary morphology)",
+          "reference": "< 20 follicles per ovary, volume < 10 ml (2018 International PCOS Guideline, ESHRE)",
+          "fields": [
+            {
+              "key": "follicle_count",
+              "label": "Follicle count (per ovary)",
+              "type": "number"
+            },
+            {
+              "key": "ovarian_volume_ml",
+              "label": "Ovarian volume",
+              "type": "number",
+              "unit": "ml"
+            }
+          ],
+          "rule": {
+            "op": "any",
+            "rules": [
+              {
+                "op": "gte",
+                "field": "follicle_count",
+                "value": 20
+              },
+              {
+                "op": "gte",
+                "field": "ovarian_volume_ml",
+                "value": 10
+              }
+            ]
+          },
+          "description": "An ultrasound showing many small follicles or an enlarged ovary supports the Rotterdam ultrasound criterion."
+        },
+        {
+          "id": "hormonal_total_testosterone",
+          "category": "Biochemical Evaluation",
+          "label": "Total Testosterone",
+          "reference": "8-60 ng/dL (adult women; Endocrine Society / Mayo Clinic Laboratories)",
+          "fields": [
+            {
+              "key": "total_testosterone",
+              "label": "Total Testosterone",
+              "type": "number",
+              "unit": "ng/dL"
+            }
+          ],
+          "rule": {
+            "op": "outside",
+            "field": "total_testosterone",
+            "range": [
+              8,
+              60
+            ]
+          },
+          "description": "Total testosterone measures overall androgen levels in the blood."
+        },
+        {
+          "id": "hormonal_free_testosterone",
+          "category": "Biochemical Evaluation",
+          "label": "Free Testosterone",
+          "reference": "0.13-1.08 ng/dL (age 20-30; Mayo Clinic Laboratories, test TTFB)",
+          "fields": [
+            {
+              "key": "free_testosterone",
+              "label": "Free Testosterone",
+              "type": "number",
+              "unit": "ng/dL",
+              "min": 0,
+              "step": 0.01
+            }
+          ],
+          "rule": {
+            "op": "outside",
+            "field": "free_testosterone",
+            "range": [
+              0.13,
+              1.08
+            ]
+          },
+          "description": "Free testosterone is the biologically active portion not bound to protein."
+        },
+        {
+          "id": "hormonal_lh_fsh",
+          "category": "Biochemical Evaluation",
+          "label": "LH to FSH Ratio",
+          "reference": "~1:1 (LH:FSH > 2:1 indicates Hormonal)",
+          "fields": [
+            {
+              "key": "lh_fsh_ratio",
+              "label": "LH:FSH ratio",
+              "type": "number",
+              "min": 0,
+              "step": 0.1
+            }
+          ],
+          "rule": {
+            "op": "gte",
+            "field": "lh_fsh_ratio",
+            "value": 2
+          },
+          "description": "An LH:FSH ratio above roughly 2:1 is a classic ovarian/hormonal PCOS marker."
+        },
+        {
+          "id": "hormonal_shbg",
+          "category": "Biochemical Evaluation",
+          "label": "Sex Hormone-Binding Globulin (SHBG)",
+          "reference": "18-135 nmol/L (premenopausal women, ages 18-46; Mayo Clinic Laboratories, test SHBG1)",
+          "fields": [
+            {
+              "key": "shbg",
+              "label": "SHBG",
+              "type": "number",
+              "unit": "nmol/L"
+            }
+          ],
+          "rule": {
+            "op": "outside",
+            "field": "shbg",
+            "range": [
+              18,
+              135
+            ]
+          },
+          "description": "Low SHBG lets more testosterone circulate freely, worsening androgen symptoms."
+        },
+        {
+          "id": "hormonal_post_pill",
+          "category": "Root Cause Analysis",
+          "label": "History of Post-Pill Amenorrhea or Synthetic Hormone Use",
+          "reference": "Natural cycle resumption 3-6 months post-pill",
+          "fields": [
+            {
+              "key": "post_pill_amenorrhea",
+              "label": "History of post-pill amenorrhea / synthetic hormone use?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "post_pill_amenorrhea",
+            "value": "yes"
+          },
+          "description": "Periods that don't return for months after stopping birth control can unmask an underlying hormonal imbalance."
+        }
+      ]
+    },
+    "inflammatory": {
+      "label": "Inflammatory PCOS (Immune / Gut-Driven)",
+      "source": "Section 2, Table 3",
+      "questions": [
+        {
+          "id": "inflammatory_acne",
+          "category": "Clinical Evaluation",
+          "label": "Acne Characteristics (cystic, jawline, adult-onset)",
+          "reference": "Clear skin / absence of inflammatory acne",
+          "fields": [
+            {
+              "key": "sym_acne",
+              "label": "Cystic / jawline / adult-onset acne?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "sym_acne",
+            "value": "yes"
+          },
+          "shared_field": "sym_acne",
+          "description": "The same acne pattern can also flag an inflammatory/immune driver, not just androgens."
+        },
+        {
+          "id": "inflammatory_joint_pain",
+          "category": "Clinical Evaluation",
+          "label": "Joint Pain, Unexplained Swelling, or Food Sensitivities",
+          "reference": "Absence of chronic inflammatory symptoms",
+          "fields": [
+            {
+              "key": "joint_pain",
+              "label": "Joint pain, unexplained swelling, or food sensitivities?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "joint_pain",
+            "value": "yes"
+          },
+          "description": "Unexplained joint pain, swelling, or food sensitivities can point to systemic inflammation."
+        },
+        {
+          "id": "inflammatory_hscrp",
+          "category": "Biochemical Evaluation",
+          "label": "High-Sensitivity C-Reactive Protein (hs-CRP)",
+          "reference": "< 1.0 mg/L (AHA/CDC low cardiovascular-risk tier; Pearson et al., Circulation 2003)",
+          "fields": [
+            {
+              "key": "hs_crp",
+              "label": "hs-CRP",
+              "type": "number",
+              "unit": "mg/L",
+              "min": 0,
+              "step": 0.1
+            }
+          ],
+          "rule": {
+            "op": "gte",
+            "field": "hs_crp",
+            "value": 1.0
+          },
+          "description": "hs-CRP is a blood marker of low-grade, body-wide inflammation. <1.0 mg/L is the established lower-risk tier; 1.0-3.0 mg/L is average risk and >3.0 mg/L is higher risk (AHA/CDC scientific statement)."
+        },
+        {
+          "id": "inflammatory_thyroid",
+          "category": "Biochemical Evaluation",
+          "label": "Thyroid Panel (TSH, Free T3, Free T4, TPO Antibodies)",
+          "reference": "TSH 0.4-4.0 mIU/L (American Thyroid Association); TPO Ab negative",
+          "fields": [
+            {
+              "key": "tsh",
+              "label": "TSH",
+              "type": "number",
+              "unit": "mIU/L",
+              "min": 0,
+              "step": 0.1
+            },
+            {
+              "key": "tpo_ab_positive",
+              "label": "TPO antibodies positive?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "any",
+            "rules": [
+              {
+                "op": "outside",
+                "field": "tsh",
+                "range": [
+                  0.4,
+                  4.0
+                ]
+              },
+              {
+                "op": "eq",
+                "field": "tpo_ab_positive",
+                "value": "yes"
+              }
+            ]
+          },
+          "description": "Thyroid imbalances and thyroid antibodies often travel alongside inflammatory PCOS."
+        },
+        {
+          "id": "inflammatory_vitd_zinc",
+          "category": "Biochemical Evaluation",
+          "label": "Vitamin D3 (25-OH) & Serum Zinc",
+          "reference": "Vitamin D3 optimal target > 40 ng/mL / Serum Zinc 60-106 µg/dL (Mayo Clinic Laboratories)",
+          "fields": [
+            {
+              "key": "vitamin_d3",
+              "label": "Vitamin D3 (25-OH)",
+              "type": "number",
+              "unit": "ng/mL"
+            },
+            {
+              "key": "serum_zinc",
+              "label": "Serum Zinc",
+              "type": "number",
+              "unit": "µg/dL"
+            }
+          ],
+          "rule": {
+            "op": "any",
+            "rules": [
+              {
+                "op": "lt",
+                "field": "vitamin_d3",
+                "value": 40
+              },
+              {
+                "op": "outside",
+                "field": "serum_zinc",
+                "range": [
+                  60,
+                  106
+                ]
+              }
+            ]
+          },
+          "description": "Low vitamin D or zinc can both contribute to and result from chronic inflammation. This app targets >40 ng/mL as an optimal vitamin D level; the 2011 Endocrine Society guideline's minimum \"sufficient\" cutoff is 30 ng/mL, and the 2024 update declined to endorse a single universal target."
+        },
+        {
+          "id": "inflammatory_edc",
+          "category": "Root Cause Analysis",
+          "label": "Daily EDC Exposure (plastics, pesticides, non-stick, cosmetics)",
+          "reference": "Low environmental toxin exposure",
+          "fields": [
+            {
+              "key": "edc_exposure",
+              "label": "EDC exposure level",
+              "type": "select",
+              "options": [
+                "Low",
+                "Moderate",
+                "High"
+              ]
+            }
+          ],
+          "rule": {
+            "op": "in",
+            "field": "edc_exposure",
+            "values": [
+              "Moderate",
+              "High"
+            ]
+          },
+          "description": "Everyday exposure to plastics, pesticides, and other endocrine-disrupting chemicals can drive inflammation."
+        },
+        {
+          "id": "inflammatory_heavy_metal",
+          "category": "Root Cause Analysis",
+          "label": "Heavy Metal or Occupational Chemical Exposures",
+          "reference": "No significant chemical exposure",
+          "fields": [
+            {
+              "key": "heavy_metal_exposure",
+              "label": "Heavy metal / occupational chemical exposure?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "heavy_metal_exposure",
+            "value": "yes"
+          },
+          "description": "Ongoing exposure to heavy metals or industrial chemicals is a less common but real inflammatory trigger."
+        },
+        {
+          "id": "inflammatory_gut",
+          "category": "Root Cause Analysis",
+          "label": "Gut Health Status (bloating, IBS, constipation, dysbiosis)",
+          "reference": "Normal daily bowel movements, no bloating",
+          "fields": [
+            {
+              "key": "gut_health_issue",
+              "label": "Bloating, IBS, constipation or dysbiosis?",
+              "type": "yesno"
+            },
+            {
+              "key": "gut_dysbiosis_severe",
+              "label": "If yes - is it severe / frequent (severe IBS or gut dysbiosis)?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "gut_health_issue",
+            "value": "yes"
+          },
+          "description": "Bloating, IBS-type symptoms, or irregular bowel movements can signal gut-driven inflammation."
+        },
+        {
+          "id": "inflammatory_autoimmune",
+          "category": "Root Cause Analysis",
+          "label": "Chronic Low-Grade Infections or Autoimmune History",
+          "reference": "Absence of chronic infection/autoimmunity",
+          "fields": [
+            {
+              "key": "autoimmune_history",
+              "label": "Chronic low-grade infections or autoimmune history?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "autoimmune_history",
+            "value": "yes"
+          },
+          "description": "A personal history of autoimmune disease or frequent low-grade infections raises inflammatory risk."
+        },
+        {
+          "id": "inflammatory_sunlight",
+          "category": "Root Cause Analysis",
+          "label": "Sunlight Exposure (10am-4pm, >20 min/day) & deficiency symptoms",
+          "reference": "No bone/joint pain, muscle weakness, or slow wound healing",
+          "fields": [
+            {
+              "key": "low_sun_exposure",
+              "label": "Less than 20 min/day direct sunlight (10am-4pm)?",
+              "type": "yesno"
+            },
+            {
+              "key": "vitd_deficiency_symptoms",
+              "label": "Bone/joint pain, muscle weakness, or slow wound healing?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "any",
+            "rules": [
+              {
+                "op": "eq",
+                "field": "low_sun_exposure",
+                "value": "yes"
+              },
+              {
+                "op": "eq",
+                "field": "vitd_deficiency_symptoms",
+                "value": "yes"
+              }
+            ]
+          },
+          "description": "Too little sun exposure can lower vitamin D and contribute to inflammation."
+        }
+      ]
+    },
+    "metabolic": {
+      "label": "Metabolic PCOS (Insulin-Resistant)",
+      "source": "Section 2, Table 4",
+      "questions": [
+        {
+          "id": "metabolic_lipid",
+          "category": "Biochemical Evaluation",
+          "label": "Fasting Lipid Profile (Triglycerides & HDL)",
+          "reference": "Triglycerides < 150 mg/dL, HDL > 50 mg/dL, TG:HDL ratio < 2.0",
+          "fields": [
+            {
+              "key": "triglycerides",
+              "label": "Triglycerides (mg/dL)",
+              "type": "number"
+            },
+            {
+              "key": "hdl",
+              "label": "HDL Cholesterol (mg/dL)",
+              "type": "number"
+            }
+          ],
+          "rule": {
+            "op": "any",
+            "rules": [
+              {
+                "op": "gte",
+                "field": "triglycerides",
+                "value": 150
+              },
+              {
+                "op": "lt",
+                "field": "hdl",
+                "value": 50
+              },
+              {
+                "op": "gte",
+                "field": "tg_hdl_ratio",
+                "value": 2.0
+              }
+            ]
+          },
+          "description": "High triglycerides, low HDL, or a high triglyceride-to-HDL ratio are all signs of the same underlying metabolic dysfunction -- any one of them counts as a positive finding here.",
+          "computed": {
+            "tg_hdl_ratio": "triglycerides / hdl"
+          }
+        },
+        {
+          "id": "metabolic_bmi_whr",
+          "category": "Clinical Evaluation",
+          "label": "Height, Weight, BMI, and Waist-to-Hip Ratio (WHR)",
+          "reference": "BMI 18.5-24.9 / WHR < 0.85 (WHO cutoff, women)",
+          "fields": [
+            {
+              "key": "height_cm",
+              "label": "Height",
+              "type": "number",
+              "unit": "cm"
+            },
+            {
+              "key": "weight_kg",
+              "label": "Weight",
+              "type": "number",
+              "unit": "kg"
+            },
+            {
+              "key": "waist_cm",
+              "label": "Waist circumference",
+              "type": "number",
+              "unit": "cm"
+            },
+            {
+              "key": "hip_cm",
+              "label": "Hip circumference",
+              "type": "number",
+              "unit": "cm"
+            }
+          ],
+          "computed": {
+            "bmi": "weight_kg / ((height_cm/100) ** 2)",
+            "whr": "waist_cm / hip_cm"
+          },
+          "rule": {
+            "op": "any",
+            "rules": [
+              {
+                "op": "outside",
+                "field": "bmi",
+                "range": [
+                  18.5,
+                  24.9
+                ]
+              },
+              {
+                "op": "gte",
+                "field": "whr",
+                "value": 0.85
+              }
+            ]
+          },
+          "description": "BMI and waist-to-hip ratio together flag insulin-resistance-related weight patterns."
+        },
+        {
+          "id": "metabolic_acanthosis",
+          "category": "Clinical Evaluation",
+          "label": "Presence of Acanthosis Nigricans (darkened skin patches)",
+          "reference": "Absence of skin hyperpigmentation",
+          "fields": [
+            {
+              "key": "acanthosis_nigricans",
+              "label": "Acanthosis nigricans (darkened skin patches)?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "acanthosis_nigricans",
+            "value": "yes"
+          },
+          "description": "Dark, velvety skin patches (neck, underarms) are a visible sign of insulin resistance."
+        },
+        {
+          "id": "metabolic_skin_tags",
+          "category": "Clinical Evaluation",
+          "label": "History of Skin Tags",
+          "reference": "Absence of skin tags",
+          "fields": [
+            {
+              "key": "skin_tags",
+              "label": "History of skin tags?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "skin_tags",
+            "value": "yes"
+          },
+          "description": "Multiple skin tags are commonly associated with high insulin levels."
+        },
+        {
+          "id": "metabolic_postprandial",
+          "category": "Clinical Evaluation",
+          "label": "Recurrent Fatigue, Brain Fog, or Energy Slumps After Meals",
+          "reference": "Sustained post-prandial energy",
+          "fields": [
+            {
+              "key": "postprandial_slump",
+              "label": "Fatigue / brain fog / energy slumps after meals?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "postprandial_slump",
+            "value": "yes"
+          },
+          "description": "Feeling foggy or sleepy after meals can indicate blood-sugar swings from insulin resistance."
+        },
+        {
+          "id": "metabolic_glucose_insulin",
+          "category": "Biochemical Evaluation",
+          "label": "Fasting Glucose & Fasting Insulin",
+          "reference": "< 95 mg/dL / < 5 µIU/mL (intentionally sensitive early-detection thresholds)",
+          "fields": [
+            {
+              "key": "fasting_glucose",
+              "label": "Fasting Glucose",
+              "type": "number",
+              "unit": "mg/dL"
+            },
+            {
+              "key": "fasting_insulin",
+              "label": "Fasting Insulin",
+              "type": "number",
+              "unit": "µIU/mL",
+              "min": 0,
+              "step": 0.1
+            }
+          ],
+          "rule": {
+            "op": "any",
+            "rules": [
+              {
+                "op": "gte",
+                "field": "fasting_glucose",
+                "value": 95
+              },
+              {
+                "op": "gte",
+                "field": "fasting_insulin",
+                "value": 5
+              }
+            ]
+          },
+          "description": "Fasting glucose and insulin together are the core blood tests for insulin resistance. This app uses stricter early-warning thresholds than standard diabetes screening: the ADA standard fasting-glucose cutoffs are prediabetes 100-125 mg/dL and diabetes ≥126 mg/dL, and the standard fasting-insulin lab range is 2-25 µIU/mL (2-6 µIU/mL considered optimal) -- catching insulin resistance before it reaches those diagnostic thresholds is the point of PCOS-specific screening."
+        },
+        {
+          "id": "metabolic_hba1c",
+          "category": "Biochemical Evaluation",
+          "label": "HbA1c (Glycated Hemoglobin)",
+          "reference": "< 5.4% (intentionally sensitive early-detection threshold)",
+          "fields": [
+            {
+              "key": "hba1c",
+              "label": "HbA1c",
+              "type": "number",
+              "unit": "%",
+              "min": 0,
+              "step": 0.1
+            }
+          ],
+          "rule": {
+            "op": "gte",
+            "field": "hba1c",
+            "value": 5.4
+          },
+          "description": "HbA1c reflects your average blood sugar over the past ~3 months. This app flags earlier than standard diabetes screening (ADA prediabetes cutoff is 5.7%, diabetes ≥6.5%) to catch insulin resistance while it's still early."
+        },
+        {
+          "id": "metabolic_homair",
+          "category": "Biochemical Evaluation",
+          "label": "HOMA-IR Index",
+          "reference": "< 1.5 ideal (> 2.0 = Metabolic)",
+          "fields": [
+            {
+              "key": "homa_ir",
+              "label": "HOMA-IR",
+              "type": "number",
+              "min": 0,
+              "step": 0.1
+            }
+          ],
+          "rule": {
+            "op": "gte",
+            "field": "homa_ir",
+            "value": 1.5
+          },
+          "description": "HOMA-IR is a calculated score of how well your body responds to insulin. This app's ≥1.5 tick / >2.0 override thresholds are consistent with PCOS-specific insulin-resistance research; commonly cited general-population HOMA-IR cutoffs for insulin resistance range from 2.0-2.5."
+        },
+        {
+          "id": "metabolic_activity",
+          "category": "Root Cause Analysis",
+          "label": "Daily Physical Activity Level",
+          "reference": "Regular moderate-to-vigorous activity",
+          "fields": [
+            {
+              "key": "sedentary",
+              "label": "Mostly sedentary / below regular moderate-to-vigorous activity?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "sedentary",
+            "value": "yes"
+          },
+          "description": "Low daily activity contributes to and worsens insulin resistance over time."
+        },
+        {
+          "id": "metabolic_ultraprocessed",
+          "category": "Root Cause Analysis",
+          "label": "Ultra-Processed Food & Refined Sugar Intake",
+          "reference": "Whole-food diet; < 2 processed meals/week",
+          "fields": [
+            {
+              "key": "ultraprocessed_food",
+              "label": "2 or more ultra-processed / high-sugar meals per week?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "ultraprocessed_food",
+            "value": "yes"
+          },
+          "description": "Frequent ultra-processed or high-sugar food spikes insulin and blood glucose."
+        },
+        {
+          "id": "metabolic_sleep_apnea",
+          "category": "Clinical Evaluation",
+          "label": "Sleep Apnea",
+          "reference": "No diagnosed sleep apnea",
+          "shared_field": "sleep_apnea",
+          "fields": [
+            {
+              "key": "sleep_apnea",
+              "label": "Do you have sleep apnea (stop breathing during sleep)?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "sleep_apnea",
+            "value": "yes"
+          },
+          "description": "Sleep apnea is a strong driver of insulin resistance, independent of weight."
+        },
+        {
+          "id": "metabolic_hypoxia",
+          "category": "Clinical Evaluation",
+          "label": "Hypoxia (Shortness of Breath / Low Oxygen)",
+          "reference": "No hypoxia/low-oxygen symptoms",
+          "shared_field": "hypoxia",
+          "fields": [
+            {
+              "key": "hypoxia",
+              "label": "Do you experience hypoxia (shortness of breath/low oxygen)?",
+              "type": "yesno"
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "hypoxia",
+            "value": "yes"
+          },
+          "description": "Low blood oxygen can worsen insulin resistance and metabolic strain."
+        },
+        {
+          "id": "metabolic_body_type",
+          "category": "Clinical Evaluation",
+          "label": "Body Type",
+          "fields": [
+            {
+              "key": "body_type",
+              "label": "Body Type",
+              "type": "select",
+              "options": [
+                "Obese",
+                "Lean"
+              ]
+            }
+          ],
+          "rule": {
+            "op": "eq",
+            "field": "body_type",
+            "value": "Obese"
+          },
+          "description": "Obese and lean PCOS have different dietary requirements.",
+          "reference": "Self-reported body type; used only to tailor the diet/exercise plan, not scored against a 'normal' value"
+        }
+      ]
+    }
+  },
+  "mitochondrial_axis": {
+    "label": "General Mitochondrial Dysfunction & Hypoxia Triggers",
+    "source": "Section 2, Table 5 (screening axis, scored out of 4, not one of the 4 main phenotypes)",
+    "questions": [
+      {
+        "id": "mito_fatigue",
+        "category": "Root Cause Analysis",
+        "label": "Fatigue / Low Energy",
+        "reference": "Indicates cellular ATP/mitochondrial exhaustion",
+        "fields": [
+          {
+            "key": "mito_fatigue",
+            "label": "Are you feeling fatigued or low on energy most days?",
+            "type": "yesno"
+          }
+        ],
+        "rule": {
+          "op": "eq",
+          "field": "mito_fatigue",
+          "value": "yes"
+        },
+        "description": "A simple everyday fatigue check, asked directly instead of screening for depression."
+      },
+      {
+        "id": "mito_hypoxia",
+        "category": "Root Cause Analysis",
+        "label": "Hypoxia Indicators (shallow breathing, low oxygen, anemia)",
+        "reference": "Cellular hypoxia impairs ovarian follicle maturation",
+        "fields": [
+          {
+            "key": "hypoxia",
+            "label": "Shallow/chest breathing, low-oxygen symptoms, or anemia?",
+            "type": "yesno"
+          }
+        ],
+        "rule": {
+          "op": "eq",
+          "field": "hypoxia",
+          "value": "yes"
+        },
+        "description": "Shallow breathing and anemia both reduce how much oxygen reaches your tissues.",
+        "shared_field": "hypoxia"
+      },
+      {
+        "id": "mito_sleep_apnea",
+        "category": "Root Cause Analysis",
+        "label": "Sleep Apnea",
+        "reference": "Nocturnal hypoxia disrupts mitochondrial recovery during sleep",
+        "fields": [
+          {
+            "key": "sleep_apnea",
+            "label": "Do you have sleep apnea (stop breathing during sleep)?",
+            "type": "yesno"
+          }
+        ],
+        "rule": {
+          "op": "eq",
+          "field": "sleep_apnea",
+          "value": "yes"
+        },
+        "description": "Sleep apnea is asked on its own, separately from general hypoxia symptoms.",
+        "shared_field": "sleep_apnea"
+      },
+      {
+        "id": "mito_pem",
+        "category": "Root Cause Analysis",
+        "label": "Post-Exertional Malaise (feeling crashed after exercise)",
+        "reference": "Mitochondrial transport chain impairment",
+        "fields": [
+          {
+            "key": "mito_pem",
+            "label": "Feeling crashed / wiped out after exercise?",
+            "type": "yesno"
+          }
+        ],
+        "rule": {
+          "op": "eq",
+          "field": "mito_pem",
+          "value": "yes"
+        },
+        "description": "Crashing or feeling wiped out after normal exercise can signal impaired cellular energy production."
+      },
+      {
+        "id": "mito_detraining",
+        "category": "Root Cause Analysis",
+        "label": "Sudden Detraining / Cessation of Competitive Sports",
+        "reference": "Consistent exercise baseline",
+        "fields": [
+          {
+            "key": "mito_detraining",
+            "label": "Sudden stop of a previously active/competitive sport routine?",
+            "type": "yesno"
+          }
+        ],
+        "rule": {
+          "op": "eq",
+          "field": "mito_detraining",
+          "value": "yes"
+        },
+        "description": "Suddenly stopping regular sport/exercise can itself disrupt hormonal and energy balance."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "id": "metabolic_override",
+      "phenotype": "metabolic",
+      "label": "Fasting Insulin > 10 µIU/mL or HOMA-IR > 2.0",
+      "reference": "Confirms Metabolic Phenotype",
+      "source": "Section 3, Key Biomarker Priority Overrules, bullet 1",
+      "rule": {
+        "op": "any",
+        "rules": [
+          {
+            "op": "gt",
+            "field": "fasting_insulin",
+            "value": 10
+          },
+          {
+            "op": "gt",
+            "field": "homa_ir",
+            "value": 2.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "adrenal_override",
+      "phenotype": "adrenal",
+      "label": "Isolated DHEA-S > 350 µg/dL with normal insulin",
+      "reference": "Confirms Adrenal Phenotype (isolated marked elevation, normal insulin). DHEA-S >600 µg/dL specifically is suggestive of an androgen-secreting adrenal tumor (Mayo Clinic Laboratories) and warrants urgent medical evaluation regardless of phenotype.",
+      "source": "Section 3, Key Biomarker Priority Overrules, bullet 2",
+      "rule": {
+        "op": "all",
+        "rules": [
+          {
+            "op": "gt",
+            "field": "dhea_s",
+            "value": 350
+          },
+          {
+            "op": "not",
+            "rule": {
+              "op": "any",
+              "rules": [
+                {
+                  "op": "gt",
+                  "field": "fasting_insulin",
+                  "value": 10
+                },
+                {
+                  "op": "gt",
+                  "field": "homa_ir",
+                  "value": 2.0
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "hormonal_override",
+      "phenotype": "hormonal",
+      "label": "LH:FSH > 2:1 or post-pill amenorrhea",
+      "reference": "Confirms Hormonal Phenotype",
+      "source": "Section 3, Key Biomarker Priority Overrules, bullet 3",
+      "rule": {
+        "op": "any",
+        "rules": [
+          {
+            "op": "gt",
+            "field": "lh_fsh_ratio",
+            "value": 2
+          },
+          {
+            "op": "eq",
+            "field": "post_pill_amenorrhea",
+            "value": "yes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "inflammatory_override",
+      "phenotype": "inflammatory",
+      "label": "hs-CRP > 1.5 mg/L or severe IBS/gut dysbiosis",
+      "reference": "Confirms Inflammatory Phenotype",
+      "source": "Section 3, Key Biomarker Priority Overrules, bullet 4",
+      "rule": {
+        "op": "any",
+        "rules": [
+          {
+            "op": "gt",
+            "field": "hs_crp",
+            "value": 1.5
+          },
+          {
+            "op": "eq",
+            "field": "gut_dysbiosis_severe",
+            "value": "yes"
+          }
+        ]
+      }
+    }
+  ],
+  "severity_bands": {
+    "source": "Section 3, Clinical Severity Grading",
+    "bands": [
+      {
+        "min": 0,
+        "max": 0,
+        "label": "None / Minimal"
+      },
+      {
+        "min": 1,
+        "max": 2,
+        "label": "Mild Driver"
+      },
+      {
+        "min": 3,
+        "max": 4,
+        "label": "Moderate Driver"
+      },
+      {
+        "min": 5,
+        "max": 10,
+        "label": "Severe Driver / Primary Target"
+      }
+    ]
+  },
+  "classification_rules": {
+    "primary": "Section 3: phenotype with the highest percentage of positive ticks (out of 10) is the primary/dominant driver.",
+    "mixed": "Section 3: if two phenotypes tie for the highest tick count, classify as Mixed/Combination Phenotype requiring a dual-targeted protocol.",
+    "override_precedence": "Section 3: a triggered biomarker override confirms its phenotype and can flip the tally-based classification. If overrides for two different phenotypes trigger simultaneously, classify as Mixed/Combination.",
+    "biomarker_support_note": "Section 3: '3+ positive findings in key biomarkers' for a phenotype is surfaced as supporting evidence alongside the tally-based result."
+  },
+  "first_line": {
+    "label": "First-Line Testing (Rotterdam Criteria)",
+    "questions": [
+      {
+        "id": "rotterdam_irregular_cycle",
+        "label": "Irregular menstrual cycle?",
+        "fields": [
+          {
+            "key": "irregular_cycle",
+            "label": "Do you have an irregular menstrual cycle?",
+            "type": "yesno"
+          }
+        ],
+        "description": "Menstrual cycles longer than 35 days or irregular bleeding."
+      },
+      {
+        "id": "rotterdam_high_testosterone",
+        "label": "High Testosterone (Clinical or Biochemical)",
+        "fields": [
+          {
+            "key": "high_testosterone_symptoms",
+            "label": "Symptoms of high testosterone (excess hair, severe acne)?",
+            "type": "yesno"
+          },
+          {
+            "key": "total_testosterone",
+            "label": "Total Testosterone (ng/dL)",
+            "type": "number"
+          }
+        ],
+        "description": "Clinical signs like hirsutism or elevated testosterone in blood tests."
+      },
+      {
+        "id": "rotterdam_polycystic_ovaries",
+        "label": "Polycystic Ovaries on Ultrasound",
+        "fields": [
+          {
+            "key": "polycystic_ovaries_usg",
+            "label": "Did ultrasound show polycystic ovaries?",
+            "type": "yesno"
+          }
+        ],
+        "description": "More than 20 follicles per ovary or increased ovarian volume."
+      }
+    ]
+  },
+  "exclusions": {
+    "label": "Exclusion Criteria",
+    "questions": [
+      {
+        "id": "exclusion_thyroid",
+        "label": "Other Thyroid or Pituitary disorders?",
+        "fields": [
+          {
+            "key": "exclusion_other_disorders",
+            "label": "Have you been diagnosed with congenital adrenal hyperplasia, androgen-secreting tumors, or Cushing's syndrome?",
+            "type": "yesno"
+          }
+        ],
+        "description": "These conditions can mimic PCOS and must be ruled out."
+      }
+    ]
+  }
+}

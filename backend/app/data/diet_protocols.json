@@ -1,0 +1,414 @@
+{
+  "general_protocol": {
+    "source": "Section 4, Table 7 (PCOS Phenotype Dietary Management Matrix)",
+    "adrenal": {
+      "focus": "HPA Axis Stress",
+      "diet_strategy": [
+        "Regular meal timing (no extended fasting)",
+        "Complex carbs at dinner to lower cortisol",
+        "Magnesium & electrolyte-rich foods"
+      ],
+      "exercise": [
+        "Low-impact movement: Yoga, Pilates, walking, light mobility work",
+        "STRICTLY AVOID HIIT & intense cardio"
+      ],
+      "priorities": [
+        "Prevents cortisol spikes that stimulate adrenal androgen (DHEA-S) production",
+        "Restores circadian rhythm"
+      ]
+    },
+    "hormonal": {
+      "focus": "Ovarian / Post-Pill",
+      "diet_strategy": [
+        "Phytoestrogen-rich & liver support",
+        "Cruciferous veggies (DIM / I3C)",
+        "Ground flaxseed (1-2 tbsp/day)",
+        "High zinc & B-vitamin density"
+      ],
+      "exercise": [
+        "Moderate Resistance Training",
+        "Zone 2 Aerobic exercise (cycling/swimming 3x/week)"
+      ],
+      "priorities": [
+        "Enhances hepatic clearance of excess circulating androgens",
+        "Supports natural LH/FSH pulsatility & ovulatory cycles"
+      ]
+    },
+    "inflammatory": {
+      "focus": "Immune / Gut",
+      "diet_strategy": [
+        "Anti-inflammatory / elimination diet",
+        "Remove gluten, dairy, refined seed oils",
+        "High omega-3s & polyphenol-rich berries"
+      ],
+      "exercise": [
+        "Zone 2 movement + low-strain functional strength work"
+      ],
+      "priorities": [
+        "Mitigates gut endotoxemia (LPS leakage)",
+        "Suppresses systemic inflammatory cytokine production"
+      ]
+    },
+    "metabolic": {
+      "focus": "Insulin-Resistant",
+      "diet_strategy": [
+        "Low glycemic load",
+        "30g+ protein per main meal",
+        "Fiber > 35g/day",
+        "Food order sequence: vegetables/protein first, complex carbs last"
+      ],
+      "exercise": [
+        "Heavy Resistance Training (3-4x/week)",
+        "Low-Intensity Steady State (LISS) cardio (10k daily steps)"
+      ],
+      "priorities": [
+        "Enhances GLUT4 translocation & muscle glucose uptake",
+        "Promotes mitochondrial biogenesis",
+        "Avoid high-sugar snacks"
+      ]
+    },
+    "mitochondrial": {
+      "focus": "General Mitochondrial Dysfunction & Hypoxia Triggers",
+      "diet_strategy": [
+        "CoQ10 (Ubiquinol), Alpha-Lipoic Acid, PQQ, L-Carnitine & N-Acetyl Cysteine (NAC)",
+        "Iron/B12 rich foods for oxygen transport",
+        "Nitrate-rich foods (beetroot, leafy greens) for nitric oxide synthesis",
+        "Electron Transport Chain nutrient support"
+      ],
+      "exercise": [
+        "Diaphragmatic breathing exercises & nasal breathing training",
+        "Graded exercise therapy (avoiding post-exertional crash)",
+        "Light aerobic Zone 1/2 movement",
+        "Red light / photobiomodulation & breathwork"
+      ],
+      "priorities": [
+        "Restores cellular ATP production & mitochondrial membrane potential",
+        "Corrects tissue hypoxia & enhances follicular microvascular oxygenation",
+        "Treats underlying fatigue, post-exertional malaise & oxidative stress"
+      ]
+    }
+  },
+  "regional_suggestions": {
+    "source": "Section 4, Table 8 (Targeted South Indian & North Indian Nutrition Guidelines)",
+    "adrenal": {
+      "primary_focus": [
+        "Regular meal timing (no extended fasting)",
+        "Complex carbs at dinner to lower evening cortisol",
+        "Magnesium & electrolyte-rich foods"
+      ],
+      "South Indian": {
+        "Dinner": "Foxtail millet (Thinai) or red rice (Matta) cooked with vegetables and a side of pumpkin Kootu",
+        "Snacks/Drinks": "Unsweetened Ragi malt made with thin buttermilk; pumpkin seed Sundal",
+        "Vegetables": "Ash gourd (venpooshani), leafy greens, drumstick (murungakkai)"
+      },
+      "North Indian": {
+        "Dinner": "Bajra or Jowar roti paired with bottle gourd (Lauki) sabzi and a small portion of sweet potato",
+        "Snacks/Drinks": "Sattu drink (unsweetened) with roasted cumin; roasted makhana with pumpkin seeds",
+        "Vegetables": "Spinach (Palak), bottle gourd, pumpkin (Kaddu)"
+      },
+      "East Indian": {
+        "Dinner": "Red rice with a light lau-chingri (bottle gourd) curry, cooked in mustard oil with minimal spice",
+        "Snacks/Drinks": "Thin, unsweetened ghol (spiced buttermilk) with roasted cumin; steamed pumpkin seeds",
+        "Vegetables": "Bottle gourd (lau), pumpkin (kumro), drumstick (sajne data)"
+      },
+      "West Indian": {
+        "Dinner": "Bajra or jowar bhakri with lauki-methi sabzi and a small portion of sweet potato",
+        "Snacks/Drinks": "Unsweetened chaas with roasted jeera and hing; roasted makhana with pumpkin seeds",
+        "Vegetables": "Doodhi (bottle gourd), methi (fenugreek greens), pumpkin (bhopla)"
+      }
+    },
+    "inflammatory": {
+      "primary_focus": [
+        "Anti-inflammatory & gut-healing focus",
+        "Eliminate gluten, processed dairy & refined seed oils",
+        "High omega-3s & polyphenol-rich foods"
+      ],
+      "South Indian": {
+        "Proteins": "Sardine/Anchovy (Nethili/Mathi) fish curry cooked in cold-pressed coconut oil with turmeric and kodampuli",
+        "Mains": "Sprouted green gram dosa (Pesarattu) served with fresh coconut-mint chutney",
+        "Gut Support": "Thin spiced buttermilk (Mor) with ginger, curry leaves, and hing"
+      },
+      "North Indian": {
+        "Proteins": "Grilled paneer (if dairy tolerated) or tofu tikka; moong dal & spinach chilla",
+        "Mains": "Gluten-free Missi roti (besan) served with Rajma or Chana masala cooked in mustard oil",
+        "Gut Support": "Homemade fermented carrot drink (Kanji); jeera-ajwain decoction"
+      },
+      "East Indian": {
+        "Proteins": "Rohu or hilsa fish curry cooked in mustard oil with turmeric and minimal chilli",
+        "Mains": "Moong dal khichuri with bottle gourd, cooked in mustard oil instead of refined oil",
+        "Gut Support": "Thin ghol (spiced buttermilk) with ginger and curry leaves"
+      },
+      "West Indian": {
+        "Proteins": "Grilled pomfret or steamed moong dal-methi muthia (not fried)",
+        "Mains": "Gluten-free bajra dhebra or jowar bhakri with garlic chutney",
+        "Gut Support": "Unsweetened kokum sherbet; homemade buttermilk with ajwain"
+      }
+    },
+    "hormonal": {
+      "primary_focus": [
+        "Phytoestrogen-rich & liver support",
+        "Cruciferous vegetables (DIM / I3C)",
+        "Ground flaxseed (1-2 tbsp/day) & high zinc/B-vitamins"
+      ],
+      "South Indian": {
+        "Mains": "Millet idlis/dosas made with urad dal and ground flaxseeds added to the batter",
+        "Vegetables": "Cabbage or broccoli Poriyal with fresh grated coconut; steamed cauliflower Kootu",
+        "Sides/Snacks": "Black chickpea (Kondaikadalai) Sundal; roasted sesame chutney"
+      },
+      "North Indian": {
+        "Mains": "Multigrain roti made with added flaxseed powder, served with Sarson ka saag or Gobhi-Matar sabzi",
+        "Vegetables": "Broccoli, cabbage, cauliflower (Gobhi), radish (Mooli) stir-fries",
+        "Sides/Snacks": "Black chana chaat with lemon juice and coriander; roasted sesame (Til) seeds"
+      },
+      "East Indian": {
+        "Mains": "Cabbage or broccoli ghonto (light stir-fry) in mustard oil with ground flaxseed sprinkled on top",
+        "Vegetables": "Cauliflower (phulkopi) and cabbage stir-fries; banana flower (mochar ghonto) for fibre",
+        "Sides/Snacks": "Roasted til (sesame) and flaxseed chikki (no added sugar); chana ghugni with lemon"
+      },
+      "West Indian": {
+        "Mains": "Bajra roti with added flaxseed powder, served with a low-oil methi sabzi",
+        "Vegetables": "Cabbage, cauliflower, and methi stir-fries with minimal oil",
+        "Sides/Snacks": "Roasted sesame chikki (no added sugar); black chana chaat with lemon and coriander"
+      }
+    },
+    "metabolic": {
+      "primary_focus": [
+        "Low glycemic load & high fiber (>35g/day)",
+        "30g+ protein per main meal",
+        "Food sequence: veggies/protein first, complex carbs last"
+      ],
+      "South Indian": {
+        "Mains": "Sprouted moong or horse gram (Kollu) Usili paired with a small portion of hand-pounded brown rice",
+        "Proteins": "Egg Porutu (scrambled) or grilled fish paired with vegetable Sambar",
+        "Snacks": "Roasted chana; cluster beans (Kothavarangai) Poriyal"
+      },
+      "North Indian": {
+        "Mains": "Besan or moong dal chilla stuffed with grated paneer/tofu and finely chopped vegetables",
+        "Proteins": "Egg bhurji or soya bean curry paired with a small serving of brown rice or oats roti",
+        "Snacks": "Boiled sprout salad with cucumber and tomatoes; roasted chana"
+      },
+      "East Indian": {
+        "Mains": "Cholar dal (Bengal gram) with a small portion of brown rice; vegetables and protein eaten first",
+        "Proteins": "Steamed fish (bhapa maach) or egg curry with a side of sauteed greens",
+        "Snacks": "Roasted chana; steamed sprouted moong (ankurit moong) chaat"
+      },
+      "West Indian": {
+        "Mains": "Moong dal or jowar khichdi with extra vegetables and a small rice portion",
+        "Proteins": "Egg bhurji or soya chunk curry with a side salad eaten first",
+        "Snacks": "Roasted chana; sprouted matki (moth bean) salad with cucumber and lemon"
+      }
+    },
+    "mitochondrial": {
+      "primary_focus": [
+        "Antioxidant-dense foods",
+        "Nitrate-rich veggies for nitric oxide & oxygen transport",
+        "Iron/B12 rich whole foods"
+      ],
+      "South Indian": {
+        "Mains/Sides": "Beetroot Poriyal or beetroot soup; curry leaf (Karuveppilai) rice/thogayal",
+        "Drinks": "Fresh Amla (Indian gooseberry) juice with ginger and a pinch of turmeric",
+        "Proteins": "Mutton liver or anchovy curry for iron/B12"
+      },
+      "North Indian": {
+        "Mains/Sides": "Beetroot and carrot sabzi; palak saag rich in iron and nitrates",
+        "Drinks": "Amla and spinach shot; pomegranate-beetroot juice (unsweetened)",
+        "Proteins": "Goat liver/mutton curry or iron-rich lentils (black urad dal)"
+      },
+      "East Indian": {
+        "Mains/Sides": "Beetroot light stir-fry; notte shak (red spinach) sabzi rich in iron",
+        "Drinks": "Amla juice with a pinch of black salt; unsweetened beetroot-carrot juice",
+        "Proteins": "Iron/B12-rich fish such as rohu or hilsa; egg curry"
+      },
+      "West Indian": {
+        "Mains/Sides": "Beetroot and carrot sabzi; methi (fenugreek) and spinach stir-fry for iron",
+        "Drinks": "Amla-ginger shot; unsweetened kokum-beetroot cooler",
+        "Proteins": "Iron-rich moong-methi dal; liver in moderation for B12"
+      }
+    }
+  },
+  "meal_plans": {
+    "source": "Section 4, Table 9 (Vegetarian / Non-Vegetarian / Vegan day plans + mid-meals)",
+    "adrenal": {
+      "focus": [
+        "Regular timing (no extended fasting)",
+        "Complex carbs at dinner to lower cortisol",
+        "Magnesium & electrolyte rich"
+      ],
+      "Vegetarian": {
+        "Breakfast": "Ragi & vegetable chilla with coconut chutney",
+        "Lunch": "Brown rice with Toor dal, Okra (Bhindi) sabzi, and fresh curd",
+        "Dinner": "Foxtail millet (Thinai) or Jowar roti with pumpkin Kootu / Lauki curry"
+      },
+      "Non-Vegetarian": {
+        "Breakfast": "Egg bhurji with spinach & oats/wheat toast",
+        "Lunch": "Brown rice with chicken curry cooked in coconut oil & cucumber raita",
+        "Dinner": "Foxtail millet with grilled fish & steamed ash gourd curry"
+      },
+      "Vegan": {
+        "Breakfast": "Sprouted moong chilla with fresh sesame-coconut chutney",
+        "Lunch": "Brown rice with Chana dal, Lauki sabzi, and pumpkin seeds",
+        "Dinner": "Foxtail millet / Jowar roti with pumpkin & sweet potato Kootu in coconut milk"
+      },
+      "mid_meals": {
+        "Mid-Morning": "Unsweetened Ragi malt or Sattu drink with cumin",
+        "Evening": "Pumpkin & sunflower seed Sundal or roasted makhana",
+        "Beverages": "Chamomile tea, warm golden almond milk, Ashwagandha decoction"
+      },
+      "Eggetarian": {
+        "Breakfast": "Ragi & vegetable chilla with coconut chutney and 1-2 boiled eggs",
+        "Lunch": "Brown rice with Toor dal, Okra (Bhindi) sabzi, and fresh curd",
+        "Dinner": "Foxtail millet (Thinai) or Jowar roti with pumpkin Kootu / Lauki curry"
+      }
+    },
+    "inflammatory": {
+      "focus": [
+        "Anti-inflammatory focus",
+        "Eliminate gluten, processed dairy, & seed oils",
+        "High Omega-3s & fermented foods"
+      ],
+      "Vegetarian": {
+        "Breakfast": "Pesarattu (sprouted green gram dosa) with ginger-mint chutney",
+        "Lunch": "Besan missi roti with Rajma / Chana masala & turmeric cabbage",
+        "Dinner": "Oats/Sorghum Khichdi cooked with turmeric, ghee, and mixed veggies"
+      },
+      "Non-Vegetarian": {
+        "Breakfast": "Boiled eggs with avocado spread & sauteed spinach",
+        "Lunch": "Sardine/Anchovy fish curry cooked in coconut oil with red rice & greens",
+        "Dinner": "Chicken & vegetable clear soup with quinoa or millet"
+      },
+      "Vegan": {
+        "Breakfast": "Pesarattu (sprouted green gram dosa) with mint-coriander chutney",
+        "Lunch": "Sorghum roti with Rajma / Chana masala cooked in mustard oil & turmeric cabbage",
+        "Dinner": "Moong dal & spinach Khichdi with cold-pressed coconut oil"
+      },
+      "mid_meals": {
+        "Mid-Morning": "Spiced thin buttermilk (Mor) with ginger & hing (or coconut water for vegans)",
+        "Evening": "Boiled black chickpea (Kondaikadalai) chaat with lemon",
+        "Beverages": "Fermented carrot Kanji, jeera-ajwain tea, turmeric-ginger shot"
+      },
+      "Eggetarian": {
+        "Breakfast": "Pesarattu (sprouted green gram dosa) with ginger-mint chutney and a soft-boiled egg",
+        "Lunch": "Besan missi roti with Rajma / Chana masala & turmeric cabbage",
+        "Dinner": "Oats/Sorghum Khichdi cooked with turmeric, ghee, and mixed veggies"
+      }
+    },
+    "hormonal": {
+      "focus": [
+        "Phytoestrogens & liver support",
+        "Cruciferous veggies (DIM / I3C)",
+        "Ground flaxseed (1-2 tbsp/day), B-vitamins & zinc"
+      ],
+      "Vegetarian": {
+        "Breakfast": "Millet idlis with urad dal & 1 tbsp ground flaxseeds in batter",
+        "Lunch": "Multigrain/Besan roti with Sarson ka Saag or Gobhi-Matar sabzi & curd",
+        "Dinner": "Foxtail millet with steamed broccoli/cauliflower Kootu and dal"
+      },
+      "Non-Vegetarian": {
+        "Breakfast": "Flaxseed-crusted egg omelet with broccoli & onions",
+        "Lunch": "Grilled chicken/fish with Sarson ka Saag & small portion of brown rice",
+        "Dinner": "Millet porridge/roti with fish curry & steamed cabbage poriyal"
+      },
+      "Vegan": {
+        "Breakfast": "Millet idlis with flaxseed powder & coconut chutney",
+        "Lunch": "Besan roti with Sarson ka Saag or Gobhi-Matar sabzi & hemp seed garnish",
+        "Dinner": "Foxtail millet with steamed broccoli & tofu stir-fry with coconut"
+      },
+      "mid_meals": {
+        "Mid-Morning": "Black chana chaat with coriander & lemon juice",
+        "Evening": "Roasted sesame seeds (Til) and pumpkin seed mix",
+        "Beverages": "Spearmint tea (twice daily for androgen balance), fresh Amla juice"
+      },
+      "Eggetarian": {
+        "Breakfast": "Millet idlis with urad dal, 1 tbsp ground flaxseeds in batter, and a boiled egg",
+        "Lunch": "Multigrain/Besan roti with Sarson ka Saag or Gobhi-Matar sabzi & curd",
+        "Dinner": "Foxtail millet with steamed broccoli/cauliflower Kootu and dal"
+      }
+    },
+    "metabolic": {
+      "focus": [
+        "Low glycemic load, high fiber (>35g)",
+        "30g+ protein per main meal",
+        "Sequence: veggies -> protein -> carbs"
+      ],
+      "Vegetarian": {
+        "Breakfast": "High-protein Besan or moong dal chilla stuffed with paneer",
+        "Lunch": "Horse gram (Kollu) Usili / Rajma with brown rice & cucumber salad",
+        "Dinner": "Tofu & sauteed vegetable stir-fry with oats/millet roti"
+      },
+      "Non-Vegetarian": {
+        "Breakfast": "3 egg whites + 1 whole egg bhurji with spinach & tomatoes",
+        "Lunch": "Grilled chicken breast / fish curry with large bowl of salad & red rice",
+        "Dinner": "Egg white curry or grilled fish with sauteed cluster beans"
+      },
+      "Vegan": {
+        "Breakfast": "High-protein besan/moong dal chilla stuffed with grated savory tofu",
+        "Lunch": "Horse gram (Kollu) Usili or soy bean curry with brown rice & green salad",
+        "Dinner": "Tofu & vegetable stir-fry cooked in sesame oil with small millet portion"
+      },
+      "mid_meals": {
+        "Mid-Morning": "Sprouts salad (cucumber, tomato, lemon, sprouted moong)",
+        "Evening": "Roasted chana (black chickpea) or soaked walnuts & almonds",
+        "Beverages": "Apple cider vinegar water before meals, green tea, Amla-ginger shot"
+      },
+      "Eggetarian": {
+        "Breakfast": "High-protein Besan or moong dal chilla stuffed with paneer, plus 2 egg whites",
+        "Lunch": "Horse gram (Kollu) Usili / Rajma with brown rice & cucumber salad",
+        "Dinner": "Tofu & sauteed vegetable stir-fry with oats/millet roti"
+      }
+    },
+    "mitochondrial": {
+      "focus": [
+        "Antioxidant-dense foods",
+        "Nitrate-rich veggies (nitric oxide)",
+        "Iron & B12 rich whole foods"
+      ],
+      "Vegetarian": {
+        "Breakfast": "Spinach & beetroot chilla with sesame-garlic chutney",
+        "Lunch": "Brown rice with Palak dal, beetroot poriyal/sabzi, and curd",
+        "Dinner": "Mushroom & vegetable stew with millet roti"
+      },
+      "Non-Vegetarian": {
+        "Breakfast": "Spinach & egg omelet with beetroot juice",
+        "Lunch": "Mutton liver curry or anchovy fish curry with curry leaf rice & palak saag",
+        "Dinner": "Grilled chicken with beetroot & carrot stir-fry"
+      },
+      "Vegan": {
+        "Breakfast": "Spinach & beetroot chilla with sesame-garlic chutney",
+        "Lunch": "Brown rice with Palak dal, beetroot poriyal/sabzi, and pumpkin seeds",
+        "Dinner": "Mushroom & organic tofu stew with millet roti"
+      },
+      "mid_meals": {
+        "Mid-Morning": "Fresh Amla juice with ginger and turmeric",
+        "Evening": "Pomegranate seeds with soaked walnuts",
+        "Beverages": "Beetroot-lemon shot, curry leaf (Karuveppilai) tea, hibiscus tea"
+      },
+      "Eggetarian": {
+        "Breakfast": "Spinach & beetroot chilla with sesame-garlic chutney and a boiled egg",
+        "Lunch": "Brown rice with Palak dal, beetroot poriyal/sabzi, and curd",
+        "Dinner": "Mushroom & vegetable stew with millet roti"
+      }
+    }
+  },
+  "body_type_modifiers": {
+    "Obese": {
+      "diet_strategy": [
+        "Moderate overall caloric deficit (roughly 300-500 kcal/day) built from the phenotype plan above, not extreme restriction",
+        "Prioritise protein and fibre at every meal to stay full on fewer calories",
+        "Limit refined carbs and fried food; keep portion sizes of grains modest"
+      ],
+      "exercise": [
+        "Add 150+ min/week of moderate cardio (brisk walking, cycling) on top of the phenotype's exercise plan, as tolerated",
+        "Include 2x/week resistance training to preserve muscle while losing weight"
+      ]
+    },
+    "Lean": {
+      "diet_strategy": [
+        "Do not restrict calories -- focus on nutrient density and meal regularity instead of weight loss",
+        "Ensure adequate healthy fats and protein at each meal to support hormone production"
+      ],
+      "exercise": [
+        "Favour moderate, restorative movement (yoga, walking, light strength work) over high-intensity or high-volume training, which can worsen lean-PCOS hormonal stress"
+      ]
+    }
+  }
+}
