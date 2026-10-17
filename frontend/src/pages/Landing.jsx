@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import GlassCard from '../components/GlassCard.jsx'
+import { getCurrentUser } from '../lib/api.js'
 
 const PHENOTYPES = [
   {
@@ -44,6 +45,8 @@ const PHENOTYPES = [
 ]
 
 export default function Landing() {
+  const currentUser = getCurrentUser()
+
   return (
     <div>
       {/* HERO */}
@@ -68,12 +71,26 @@ export default function Landing() {
               A comprehensive platform that helps you uncover the root cause of your Polycystic Ovary Syndrome and provides personalized diet & exercise plans tailored to your unique phenotype.
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-              <Link to="/registration" className="btn-primary">
-                Register Now
-                <svg viewBox="0 0 24 24" className="h-4 w-4 ml-2" fill="none" stroke="currentColor" strokeWidth="2.2">
-                  <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </Link>
+              {currentUser ? (
+                <Link to="/dashboard" className="btn-primary shadow-lg shadow-bio-500/20">
+                  Go to My Dashboard
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 ml-2" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </Link>
+              ) : (
+                <>
+                  <Link to="/registration" className="btn-primary shadow-lg shadow-bio-500/20">
+                    Register Free
+                    <svg viewBox="0 0 24 24" className="h-4 w-4 ml-2" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </Link>
+                  <Link to="/login" className="btn-ghost !px-5 !py-3 text-sm text-slate-300 hover:text-white">
+                    Sign In
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         </div>
@@ -155,9 +172,15 @@ export default function Landing() {
           <p className="mx-auto mt-3 max-w-md text-sm text-slate-400 sm:text-base">
             Join us to get a personalized assessment. Upload your reports or answer a few questions to get started.
           </p>
-          <Link to="/registration" className="btn-primary mt-8">
-            Register Now
-          </Link>
+          {currentUser ? (
+            <Link to="/dashboard" className="btn-primary mt-8 shadow-lg shadow-bio-500/20">
+              Go to My Dashboard →
+            </Link>
+          ) : (
+            <Link to="/registration" className="btn-primary mt-8 shadow-lg shadow-bio-500/20">
+              Create Your Account Now →
+            </Link>
+          )}
         </GlassCard>
       </section>
 

@@ -1,11 +1,24 @@
-import { Link, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { getCurrentUser, logoutUser } from '../lib/api.js'
 
 export default function SiteHeader() {
   const location = useLocation()
-  const onLanding = location.pathname === '/'
+  const navigate = useNavigate()
+  const [currentUser, setCurrentUser] = useState(null)
+
+  useEffect(() => {
+    setCurrentUser(getCurrentUser())
+  }, [location.pathname])
+
+  function handleLogout() {
+    logoutUser()
+    setCurrentUser(null)
+    navigate('/login')
+  }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/5 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-white/5 backdrop-blur-md bg-slate-950/40">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link to="/" className="group flex items-center gap-2.5">
           <span className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-bio-400/30 to-plasma-500/30 ring-1 ring-white/10">
@@ -20,15 +33,48 @@ export default function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-2">
-          <Link to="/journey" className="btn-ghost !px-4 !py-2 text-sm hidden sm:inline-flex">
-            My Journey
-          </Link>
-          <Link to="/feedback" className="btn-ghost !px-4 !py-2 text-sm hidden sm:inline-flex">
-            Feedback
-          </Link>
-          <Link to="/assessment" className="btn-ghost !px-4 !py-2 text-sm">
-            {onLanding ? 'Start Assessment' : 'Restart'}
-          </Link>
+          {currentUser ? (
+            <>
+              <Link to="/dashboard" className="btn-ghost !px-3.5 !py-2 text-xs font-semibold text-bio-300 hover:text-white">
+                📊 Dashboard
+              </Link>
+              <Link to="/assessment" className="btn-ghost !px-3.5 !py-2 text-xs text-slate-300 hidden sm:inline-flex">
+                🩺 Assessment
+              </Link>
+              <Link to="/journey" className="btn-ghost !px-3.5 !py-2 text-xs text-slate-300 hidden sm:inline-flex">
+                📅 Daily Log
+              </Link>
+              <div className="ml-2 flex items-center gap-2.5 border-l border-white/10 pl-3">
+                <Link
+                  to="/profile"
+                  className="group flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-200 hover:border-bio-400/40 hover:bg-bio-500/10 hover:text-bio-200 transition-all cursor-pointer"
+                  title="Click to view & edit your Personal Details"
+                >
+                  <span className="text-bio-300">👤</span>
+                  <span>{currentUser.full_name?.split(' ')[0] || 'Profile'}</span>
+                  <span className="text-[10px] text-bio-300 font-semibold opacity-70 group-hover:opacity-100">
+                    Edit
+                  </span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
+                  title="Sign Out"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="btn-ghost !px-4 !py-2 text-xs font-medium text-slate-300 hover:text-white">
+                Sign In
+              </Link>
+              <Link to="/registration" className="btn-primary !px-4 !py-2 text-xs font-semibold shadow-sm">
+                Register Free
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>

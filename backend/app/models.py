@@ -25,6 +25,7 @@ class Submission(Base):
 
     id = _uuid_column()
     created_at = Column(DateTime, default=datetime.utcnow)
+    email = Column(String, nullable=True)
     demographics = Column(JSON, nullable=False, default=dict)
     answers = Column(JSON, nullable=False, default=dict)
     primary_goals = Column(JSON, nullable=False, default=list)

@@ -4,17 +4,20 @@ import BackgroundImage from './components/BackgroundImage.jsx'
 import ParticleField from './components/ParticleField.jsx'
 import SiteHeader from './components/SiteHeader.jsx'
 import Landing from './pages/Landing.jsx'
-import Registration from './pages/Registration.jsx'
+import Auth from './pages/Auth.jsx'
+import Dashboard from './pages/Dashboard.jsx'
+import Profile from './pages/Profile.jsx'
 import Questionnaire from './pages/Questionnaire.jsx'
 import Results from './pages/Results.jsx'
 import Journey from './pages/Journey.jsx'
 import Feedback from './pages/Feedback.jsx'
 
-// Video is intentionally landing-page-only for now (per Ishi: "keep only landing
-// page video for now") — assessment/results keep their still, duotoned images.
 const BACKDROPS = {
   '/': { image: '/media/hero-bg.jpg', video: '/media/hero-bg.mp4' },
+  '/login': { image: '/media/hero-bg.jpg' },
   '/registration': { image: '/media/hero-bg.jpg' },
+  '/dashboard': { image: '/media/hero-bg.jpg' },
+  '/profile': { image: '/media/hero-bg.jpg' },
   '/assessment': { image: '/media/assessment-bg.jpg' },
   '/results': { image: '/media/results-bg.jpg' },
   '/journey': { image: '/media/hero-bg.jpg' },
@@ -44,7 +47,10 @@ export default function App() {
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
               <Route path="/" element={<Landing />} />
-              <Route path="/registration" element={<Registration />} />
+              <Route path="/login" element={<Auth defaultTab="login" />} />
+              <Route path="/registration" element={<Auth defaultTab="register" />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/assessment" element={<Questionnaire />} />
               <Route path="/results/:id" element={<Results />} />
               <Route path="/results" element={<Results />} />
