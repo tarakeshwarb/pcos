@@ -26,7 +26,7 @@ export default function ChatbotAssessment({
 
   // Temporary local input value for number fields before submitting
   const [numInputs, setNumInputs] = useState({})
-  
+
   // Show drawer/modal of questions in current category to quickly review/jump
   const [showCategoryReview, setShowCategoryReview] = useState(false)
   const [notice, setNotice] = useState(null)
@@ -45,7 +45,8 @@ export default function ChatbotAssessment({
       const initial = {}
       for (const f of currentQuestion.fields) {
         if (f.type === 'number') {
-          initial[f.key] = answers[f.key] !== undefined && answers[f.key] !== null ? answers[f.key] : ''
+          initial[f.key] =
+            answers[f.key] !== undefined && answers[f.key] !== null ? answers[f.key] : ''
         }
       }
       setNumInputs(initial)
@@ -93,27 +94,15 @@ export default function ChatbotAssessment({
     return liveBmi(answers.height_cm, answers.weight_kg)
   }, [answers.height_cm, answers.weight_kg])
 
-  // Preliminary diagnostic preview
-  const pipelinePreview = useMemo(() => {
-    try {
-      if (overallProgress?.filled > 5) {
-        return runPipeline(answers)
-      }
-    } catch {
-      // rule engine might throw if mandatory fields are missing
-    }
-    return null
-  }, [answers, overallProgress?.filled])
-
   // Handle single field answer
   const handleSingleAnswer = (key, value) => {
     onAnswerChange(key, value)
-    showToastNotice('✓ Response recorded')
+    showToastNotice('Response recorded')
 
-    // If all fields of this question are satisfied, advance
+    // Advance to next question smoothly
     setTimeout(() => {
       advanceNext()
-    }, 350)
+    }, 300)
   }
 
   // Handle multi-field submission (e.g. number fields)
@@ -123,10 +112,10 @@ export default function ChatbotAssessment({
         onAnswerChange(key, Number(val))
       }
     }
-    showToastNotice('✓ Numbers recorded')
+    showToastNotice('Parameters recorded')
     setTimeout(() => {
       advanceNext()
-    }, 350)
+    }, 300)
   }
 
   // Advance to next question or next category
@@ -134,12 +123,12 @@ export default function ChatbotAssessment({
     if (activeQIndex < currentQuestions.length - 1) {
       setActiveQIndex((prev) => prev + 1)
     } else {
-      // Finished current category!
+      // Finished current category
       onSaveCategory?.(currentCategory.key)
       if (activeCatIndex < ASSESSMENT_SECTIONS.length - 1) {
         setActiveCatIndex((prev) => prev + 1)
         setActiveQIndex(0)
-        showToastNotice(`✓ Saved ${currentCategory.short}! Starting ${ASSESSMENT_SECTIONS[activeCatIndex + 1].short}…`)
+        showToastNotice(`Completed ${currentCategory.short}. Advancing to ${ASSESSMENT_SECTIONS[activeCatIndex + 1].short}…`)
       }
     }
   }
@@ -164,7 +153,7 @@ export default function ChatbotAssessment({
 
   const showToastNotice = (msg) => {
     setNotice(msg)
-    setTimeout(() => setNotice(null), 3500)
+    setTimeout(() => setNotice(null), 3000)
   }
 
   // Trigger final submission
@@ -183,15 +172,15 @@ export default function ChatbotAssessment({
       {/* TOP CONTROLS & DEMO / OCR ACTIONS                           */}
       {/* ============================================================ */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
-        <div className="flex items-center gap-2 text-xs text-slate-300">
-          <span className="flex h-2.5 w-2.5 rounded-full bg-bio-400 animate-pulse shadow-glow" />
+        <div className="flex items-center gap-2.5 text-xs text-slate-300">
+          <span className="flex h-2 w-2 rounded-full bg-bio-400" />
           <span>
             {currentUser?.email ? (
               <>
-                Logged in as <strong className="text-white">{currentUser.email}</strong> · Cloud Synced
+                Authenticated as <strong className="text-white">{currentUser.email}</strong> · Database Connected
               </>
             ) : (
-              'Clinical Diagnostic Chatbot Session'
+              'Clinical Diagnostic Intake Session'
             )}
           </span>
         </div>
@@ -199,27 +188,27 @@ export default function ChatbotAssessment({
         <div className="flex flex-wrap items-center gap-2">
           {demoProfile && (
             <span className="rounded-full border border-bio-400/30 bg-bio-500/10 px-3 py-1 text-xs text-bio-200">
-              Demo: {demoProfile === 'pcos' ? 'PCOS Profile' : 'Healthy Profile'}
+              Profile: {demoProfile === 'pcos' ? 'PCOS Clinical Case' : 'Healthy Control Case'}
             </span>
           )}
           <button
             type="button"
             onClick={() => onLoadDemo('pcos')}
-            className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-bio-200"
-            title="Pre-fills all 79 clinical questions with a PCOS positive profile"
+            className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-bio-200 border border-white/10"
+            title="Pre-fills clinical questions with a PCOS positive profile"
           >
-            ⚡ Fill PCOS Case
+            Load PCOS Profile
           </button>
           <button
             type="button"
             onClick={() => onLoadDemo('healthy')}
-            className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-bio-200"
+            className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-bio-200 border border-white/10"
             title="Pre-fills all questions with standard healthy values"
           >
-            ⚡ Fill Healthy Case
+            Load Healthy Profile
           </button>
           <label className="btn-ghost !px-3 !py-1.5 text-xs text-bio-300 hover:text-white cursor-pointer border border-bio-400/30">
-            📄 Upload Blood Report (OCR)
+            Upload Lab Report (OCR)
             <input
               type="file"
               accept=".pdf,.png,.jpg,.jpeg"
@@ -234,13 +223,13 @@ export default function ChatbotAssessment({
       {uploadStatus && (
         <div className="mb-6 rounded-xl border border-bio-400/40 bg-bio-500/10 px-4 py-3 text-xs text-bio-200 flex items-center justify-between">
           <span>{uploadStatus}</span>
-          <button onClick={() => setUploadStatus(null)} className="text-slate-400 hover:text-white font-bold ml-3">✕</button>
+          <button onClick={() => setUploadStatus(null)} className="text-slate-400 hover:text-white font-semibold ml-3">Dismiss</button>
         </div>
       )}
       {uploadError && (
         <div className="mb-6 rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-xs text-rose-300 flex items-center justify-between">
           <span>{uploadError}</span>
-          <button onClick={() => setUploadError(null)} className="text-slate-400 hover:text-white font-bold ml-3">✕</button>
+          <button onClick={() => setUploadError(null)} className="text-slate-400 hover:text-white font-semibold ml-3">Dismiss</button>
         </div>
       )}
 
@@ -248,16 +237,16 @@ export default function ChatbotAssessment({
       {/* CATEGORY SELECTOR CAROUSEL PILLS (Jump & Edit any Category) */}
       {/* ============================================================ */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2.5">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            Clinical Categories (Click to Jump or Update answers):
+            Evaluation Axes:
           </span>
           <button
             type="button"
             onClick={() => setShowCategoryReview(!showCategoryReview)}
-            className="text-xs font-medium text-bio-300 hover:text-white flex items-center gap-1"
+            className="text-xs font-medium text-bio-300 hover:text-white"
           >
-            <span>{showCategoryReview ? 'Hide Question Index' : '📋 Review All Questions'}</span>
+            {showCategoryReview ? 'Hide Question Index' : 'Question Index & Review'}
           </button>
         </div>
 
@@ -271,14 +260,14 @@ export default function ChatbotAssessment({
                 type="button"
                 key={sec.key}
                 onClick={() => jumpToQuestion(idx, 0)}
-                className={`relative flex flex-col justify-between rounded-xl p-2.5 text-left transition-all ${
+                className={`relative flex flex-col justify-between rounded-xl p-3 text-left transition-all ${
                   isActive
                     ? 'border-2 border-bio-400 bg-bio-500/20 shadow-lg shadow-bio-500/20'
                     : 'border border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]'
                 }`}
               >
-                <div className="flex items-center justify-between gap-1 mb-1.5">
-                  <span className="text-base">{sec.icon}</span>
+                <div className="flex items-center justify-between gap-1 mb-2">
+                  <span className="font-mono text-xs font-bold text-bio-300">0{sec.number}</span>
                   <span
                     className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                       stats.isComplete
@@ -311,14 +300,14 @@ export default function ChatbotAssessment({
             className="mb-6 overflow-hidden rounded-2xl border border-bio-400/30 bg-slate-950/90 p-5 backdrop-blur-xl"
           >
             <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">{currentCategory.icon}</span>
+              <div className="flex items-center gap-2.5">
+                <span className="font-mono text-sm font-bold text-bio-300">0{currentCategory.number}</span>
                 <div>
                   <h3 className="font-display text-sm font-bold text-white">
-                    {currentCategory.title} · Questions Index
+                    {currentCategory.title} · Question Directory
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Click any question to open and update its answers directly in the chatbot.
+                    Select any question below to inspect or modify stored clinical values.
                   </p>
                 </div>
               </div>
@@ -327,7 +316,7 @@ export default function ChatbotAssessment({
                 onClick={() => setShowCategoryReview(false)}
                 className="text-slate-400 hover:text-white text-xs font-bold px-2 py-1"
               >
-                ✕ Close
+                Close
               </button>
             </div>
 
@@ -362,7 +351,7 @@ export default function ChatbotAssessment({
                     <div className="pr-4">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-mono text-[11px] text-bio-300 font-bold">
-                          Q{qIdx + 1}
+                          Item {qIdx + 1}
                         </span>
                         <span className="text-xs font-medium text-slate-200">
                           {q.label || q.text}
@@ -370,7 +359,7 @@ export default function ChatbotAssessment({
                       </div>
                       {answeredValues && (
                         <p className="text-[11px] text-bio-200 font-mono">
-                          ✓ {answeredValues}
+                          {answeredValues}
                         </p>
                       )}
                     </div>
@@ -381,7 +370,7 @@ export default function ChatbotAssessment({
                           : 'border border-white/10 bg-white/5 text-slate-500'
                       }`}
                     >
-                      {qAnswered ? 'Answered' : 'Pending'}
+                      {qAnswered ? 'Recorded' : 'Pending'}
                     </span>
                   </button>
                 )
@@ -392,30 +381,26 @@ export default function ChatbotAssessment({
       </AnimatePresence>
 
       {/* ============================================================ */}
-      {/* MAIN CHAT CONVERSATION CONTAINER                             */}
+      {/* MAIN CONSULTATION CONTAINER                                  */}
       {/* ============================================================ */}
       <div className="rounded-3xl border border-white/10 bg-slate-950/80 backdrop-blur-2xl shadow-2xl overflow-hidden flex flex-col">
-        {/* Chatbot Top Bar */}
+        {/* Top Header Bar */}
         <div className="flex items-center justify-between border-b border-white/10 bg-slate-900/80 px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-bio-400 to-plasma-500 text-slate-950 font-bold shadow-glow">
-              <span className="text-lg">🤖</span>
-              <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-bio-300 opacity-75" />
-                <span className="relative inline-flex h-3 w-3 rounded-full bg-bio-400" />
-              </span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-bio-500/20 text-bio-300 border border-bio-400/30 font-mono text-sm font-bold">
+              Dx
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-display text-sm font-bold text-white">
-                  Aura · Clinical AI Intake Assistant
+                  Clinical Consultation Portal
                 </h2>
-                <span className="rounded-full border border-bio-400/40 bg-bio-500/10 px-2 py-0.5 text-[10px] font-semibold text-bio-300">
-                  Step {activeCatIndex + 1} of 7
+                <span className="rounded-full border border-bio-400/40 bg-bio-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-bio-300">
+                  Step {activeCatIndex + 1} of 7 · {currentCategory.short}
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Evaluating: <strong className="text-bio-200">{currentCategory.title}</strong>
+                Protocol: <strong className="text-slate-200">{currentCategory.title}</strong>
               </p>
             </div>
           </div>
@@ -424,10 +409,10 @@ export default function ChatbotAssessment({
             <button
               type="button"
               onClick={onSwitchToForm}
-              className="btn-ghost !px-3 !py-1.5 text-xs text-slate-400 hover:text-white border border-white/10"
-              title="Switch to the standard structured form view"
+              className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-white border border-white/10"
+              title="Switch to standard category form view"
             >
-              📋 Form View
+              Form View
             </button>
             <button
               type="button"
@@ -435,7 +420,7 @@ export default function ChatbotAssessment({
               className="btn-ghost !px-3 !py-1.5 text-xs text-bio-300 hover:text-white border border-bio-400/30"
               title="Save current category answers to Supabase"
             >
-              💾 Save Axis
+              Save Axis
             </button>
           </div>
         </div>
@@ -444,7 +429,7 @@ export default function ChatbotAssessment({
         <div className="border-b border-white/5 bg-slate-900/40 px-6 py-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
             <div className="flex items-center gap-2 text-slate-300">
-              <span className="text-base">{currentCategory.icon}</span>
+              <span className="font-mono text-bio-300 font-bold">0{currentCategory.number}</span>
               <span className="font-semibold text-white">{currentCategory.short}:</span>
               <span className="text-slate-400 hidden md:inline truncate max-w-md">
                 {currentCategory.desc}
@@ -456,13 +441,13 @@ export default function ChatbotAssessment({
               </span>
               <span className="text-slate-600">·</span>
               <span className="text-slate-400 font-mono text-[11px]">
-                {overallProgress?.filled || 0} / 79 Total Answered ({overallProgress?.percentage || 0}%)
+                {overallProgress?.filled || 0} / 79 Total Parameters ({overallProgress?.percentage || 0}%)
               </span>
             </div>
           </div>
 
-          {/* Mini progress bar */}
-          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+          {/* Progress bar */}
+          <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full bg-gradient-to-r from-bio-400 to-plasma-400 transition-all duration-300"
               style={{
@@ -476,37 +461,37 @@ export default function ChatbotAssessment({
         </div>
 
         {/* ============================================================ */}
-        {/* CHAT MESSAGES STREAM AREA                                    */}
+        {/* MESSAGES STREAM AREA                                         */}
         {/* ============================================================ */}
         <div className="flex-1 p-6 space-y-6 max-h-[520px] overflow-y-auto">
-          {/* Welcome Clinical Bot Message */}
+          {/* Clinical Introduction Card */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex items-start gap-3"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-bio-500/20 text-bio-300 border border-bio-400/30">
-              🤖
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-bio-500/20 text-bio-300 border border-bio-400/30 font-mono text-xs font-bold">
+              Rx
             </div>
             <div className="max-w-2xl rounded-2xl rounded-tl-none border border-white/10 bg-slate-900/90 p-4 shadow-xl text-xs sm:text-sm text-slate-200 space-y-2">
-              <p className="font-medium text-white">
-                👋 Welcome to the Clinical PCOS Diagnostic Assessment.
+              <p className="font-semibold text-white">
+                Clinical PCOS Phenotype Intake Protocol
               </p>
               <p className="text-slate-300 leading-relaxed">
-                I will guide you step-by-step through the 7 clinical assessment categories. Your answers are automatically scored against international Rotterdam consensus criteria and saved directly to your secure medical profile.
+                This intake assesses diagnostic criteria according to Rotterdam consensus guidelines and endocrine evaluation thresholds. Recorded data is cross-referenced with metabolic, hormonal, and adrenal biomarker rules.
               </p>
-              <div className="pt-1 text-[11px] text-bio-300 flex items-center gap-2">
-                <span>💡 Tip:</span>
-                <span>You can jump between categories or edit any previous answer at any time.</span>
+              <div className="pt-1 text-[11px] text-slate-400 flex items-center gap-2 border-t border-white/5 mt-2">
+                <span className="text-bio-300 font-semibold">Note:</span>
+                <span>You can review, modify, or jump between categories at any point.</span>
               </div>
             </div>
           </motion.div>
 
           {/* Previous Questions Summary in Active Category (If answered) */}
           {activeQIndex > 0 && (
-            <div className="space-y-3 pl-11">
+            <div className="space-y-2.5 pl-11">
               <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                Answered in {currentCategory.short}:
+                Recorded in {currentCategory.short}:
               </p>
               {currentQuestions.slice(0, activeQIndex).map((prevQ, pIdx) => {
                 const values = prevQ.fields
@@ -528,16 +513,16 @@ export default function ChatbotAssessment({
                     className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2 text-xs"
                   >
                     <div className="truncate mr-3">
-                      <span className="font-mono text-slate-500 mr-2">Q{pIdx + 1}</span>
+                      <span className="font-mono text-slate-500 mr-2">Item {pIdx + 1}</span>
                       <span className="text-slate-300">{prevQ.label || prevQ.text}: </span>
-                      <strong className="text-bio-200">{values}</strong>
+                      <strong className="text-bio-200 font-medium">{values}</strong>
                     </div>
                     <button
                       type="button"
                       onClick={() => setActiveQIndex(pIdx)}
-                      className="shrink-0 text-[11px] text-bio-300 hover:text-white underline"
+                      className="shrink-0 text-[11px] text-bio-300 hover:text-white font-medium"
                     >
-                      ✏️ Edit
+                      Edit Response
                     </button>
                   </motion.div>
                 )
@@ -545,16 +530,16 @@ export default function ChatbotAssessment({
             </div>
           )}
 
-          {/* Current Question Bot Bubble */}
+          {/* Current Question Bubble */}
           <motion.div
             key={`${currentCategory.key}-${currentQuestion?.id || activeQIndex}`}
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.25 }}
             className="flex items-start gap-3"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-bio-500/20 text-bio-300 border border-bio-400/30">
-              🤖
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-bio-500/20 text-bio-300 border border-bio-400/30 font-mono text-xs font-bold">
+              Rx
             </div>
             <div className="max-w-2xl rounded-2xl rounded-tl-none border border-bio-400/40 bg-slate-900/95 p-5 shadow-2xl text-slate-100 space-y-3">
               <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
@@ -587,25 +572,25 @@ export default function ChatbotAssessment({
               {/* Shared field note if carried over */}
               {currentQuestion?.shared_field && (
                 <div className="rounded-lg border border-bio-400/20 bg-bio-500/5 px-3 py-1.5 text-xs text-bio-300">
-                  🔗 This biomarker is shared with another phenotype axis and stays synced across categories.
+                  Cross-referenced parameter: Shared with another phenotype axis and synchronized automatically.
                 </div>
               )}
             </div>
           </motion.div>
 
-          {/* Live BMI Bot Card (If height & weight answered) */}
+          {/* Live BMI Analysis (If height & weight answered) */}
           {calculatedBmi && currentCategory.key === 'metabolic' && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               className="flex items-start gap-3"
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-plasma-500/20 text-plasma-300 border border-plasma-400/30">
-                ⚖️
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-plasma-500/20 text-plasma-300 border border-plasma-400/30 font-mono text-xs font-bold">
+                BMI
               </div>
               <div className="rounded-2xl rounded-tl-none border border-plasma-400/30 bg-slate-900/90 p-4 text-xs sm:text-sm text-slate-200">
                 <p className="font-semibold text-white mb-1">
-                  📊 Live Body Mass Index (BMI) Computed:
+                  Body Mass Index (BMI) Computed:
                 </p>
                 <div className="flex items-center gap-3">
                   <span className="font-display text-xl font-bold text-bio-300">
@@ -616,7 +601,7 @@ export default function ChatbotAssessment({
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Used by the metabolic rule engine to detect insulin-resistant phenotype phenotypes.
+                  Evaluated in metabolic phenotype scoring for insulin resistance risk.
                 </p>
               </div>
             </motion.div>
@@ -630,7 +615,7 @@ export default function ChatbotAssessment({
               className="flex justify-end items-start gap-2.5"
             >
               <div className="max-w-md rounded-2xl rounded-tr-none border border-bio-400/40 bg-bio-500/10 p-4 shadow-xl text-right">
-                <p className="text-[11px] font-semibold text-bio-300 mb-1">Your Stored Answer:</p>
+                <p className="text-[11px] font-semibold text-bio-300 mb-1">Recorded Answer:</p>
                 <div className="space-y-1">
                   {currentQuestion?.fields?.map((f) => {
                     const v = answers[f.key]
@@ -644,11 +629,11 @@ export default function ChatbotAssessment({
                   })}
                 </div>
                 <div className="mt-2 flex items-center justify-end gap-2 text-[11px]">
-                  <span className="text-bio-300">✓ Recorded</span>
+                  <span className="text-bio-300 font-medium">Synchronized</span>
                 </div>
               </div>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-bio-400 text-slate-950 font-bold">
-                👤
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-bio-400 text-slate-950 font-bold text-xs">
+                Pt
               </div>
             </motion.div>
           )}
@@ -670,7 +655,7 @@ export default function ChatbotAssessment({
               className="mb-4 rounded-xl border border-bio-400/40 bg-bio-500/20 px-3.5 py-1.5 text-xs text-bio-200 flex items-center justify-between"
             >
               <span>{notice}</span>
-              <span className="text-[10px] font-mono text-bio-300">Auto-saved</span>
+              <span className="text-[10px] font-mono text-bio-300">Synchronized</span>
             </motion.div>
           )}
 
@@ -694,14 +679,13 @@ export default function ChatbotAssessment({
                             type="button"
                             key={opt}
                             onClick={() => handleSingleAnswer(field.key, opt)}
-                            className={`flex items-center justify-center gap-2.5 rounded-xl border py-3 px-4 font-display text-sm font-bold capitalize transition-all ${
+                            className={`flex items-center justify-center gap-2 rounded-xl border py-3 px-4 font-display text-sm font-bold capitalize transition-all ${
                               isSelected
                                 ? 'border-bio-400 bg-bio-400 text-slate-950 shadow-lg shadow-bio-500/30'
                                 : 'border-white/10 bg-white/5 text-slate-200 hover:border-bio-400/50 hover:bg-white/10'
                             }`}
                           >
-                            <span>{opt === 'yes' ? '✓' : '✕'}</span>
-                            <span>{opt}</span>
+                            <span>{opt === 'yes' ? 'Yes' : 'No'}</span>
                           </button>
                         )
                       })}
@@ -715,7 +699,7 @@ export default function ChatbotAssessment({
                 return (
                   <div key={field.key} className="space-y-2">
                     <label className="text-xs font-semibold text-slate-300">
-                      Select your response for: <span className="text-white">{field.label}</span>
+                      Select response: <span className="text-white">{field.label}</span>
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {field.options?.map((opt) => {
@@ -895,17 +879,17 @@ export default function ChatbotAssessment({
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-bio-400/30 bg-bio-500/10 px-3 py-1 text-xs text-bio-200">
-              <span className="h-2 w-2 rounded-full bg-bio-400 animate-pulse" />
-              <span>Full Diagnostic Pipeline Ready</span>
+              <span className="h-2 w-2 rounded-full bg-bio-400" />
+              <span>Rotterdam & Phenotype Protocol Ready</span>
             </div>
             <h3 className="font-display text-xl sm:text-2xl font-bold text-white">
-              Ready to Generate Your PCOS Phenotype Report?
+              Generate Comprehensive PCOS Diagnostic Report
             </h3>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              You can submit at any time to run the complete deterministic classification pipeline. HelixDx evaluates Rotterdam diagnostic gates, biomarker overrides (LH/FSH, DHEA-S, HOMA-IR), and constructs your targeted dietary protocol.
+              Submit your recorded parameters to execute deterministic Rotterdam evaluation, override validation, and clinical nutrition matching.
             </p>
             <p className="text-xs text-slate-400">
-              Status: <strong className="text-bio-300">{overallProgress?.filled || 0} of 79</strong> biomarkers and symptoms recorded across all 7 categories.
+              Parameters Recorded: <strong className="text-bio-300">{overallProgress?.filled || 0} of 79</strong> biomarkers and symptoms evaluated.
             </p>
           </div>
 
@@ -922,13 +906,10 @@ export default function ChatbotAssessment({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                   </svg>
-                  <span>Calculating Phenotypes…</span>
+                  <span>Computing Diagnostic Classification…</span>
                 </>
               ) : (
-                <>
-                  <span>🚀</span>
-                  <span>Save & View Results on Dashboard →</span>
-                </>
+                <span>Save & Generate Diagnostic Report →</span>
               )}
             </button>
           </div>

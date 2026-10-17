@@ -36,18 +36,13 @@ export default function SiteHeader() {
           {currentUser ? (
             <>
               <Link to="/dashboard" className="btn-ghost !px-3.5 !py-2 text-xs font-semibold text-bio-300 hover:text-white">
-                📊 Dashboard
+                Dashboard
               </Link>
-              <Link to="/assessment?mode=chat" className="btn-ghost !px-3.5 !py-2 text-xs font-semibold text-bio-200 hover:text-white flex items-center gap-1.5">
-                <span>💬</span>
-                <span>AI Chatbot</span>
+              <Link to="/assessment" className="btn-ghost !px-3.5 !py-2 text-xs font-medium text-slate-200 hover:text-white">
+                Assessment
               </Link>
-              <Link to="/assessment?mode=form" className="btn-ghost !px-3.5 !py-2 text-xs text-slate-300 hidden sm:inline-flex items-center gap-1.5">
-                <span>🩺</span>
-                <span>Assessment Form</span>
-              </Link>
-              <Link to="/journey" className="btn-ghost !px-3.5 !py-2 text-xs text-slate-300 hidden sm:inline-flex">
-                📅 Daily Log
+              <Link to="/journey" className="btn-ghost !px-3.5 !py-2 text-xs text-slate-300 hover:text-white hidden sm:inline-flex">
+                Daily Log
               </Link>
               <div className="ml-2 flex items-center gap-2.5 border-l border-white/10 pl-3">
                 <Link
@@ -55,7 +50,6 @@ export default function SiteHeader() {
                   className="group flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-200 hover:border-bio-400/40 hover:bg-bio-500/10 hover:text-bio-200 transition-all cursor-pointer"
                   title="Click to view & edit your Personal Details"
                 >
-                  <span className="text-bio-300">👤</span>
                   <span>{currentUser.full_name?.split(' ')[0] || 'Profile'}</span>
                   <span className="text-[10px] text-bio-300 font-semibold opacity-70 group-hover:opacity-100">
                     Edit

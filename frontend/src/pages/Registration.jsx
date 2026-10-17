@@ -163,7 +163,7 @@ export default function Registration() {
             className="btn-ghost !px-4 !py-2 text-xs text-slate-400 hover:text-bio-200"
             title="Fills every step, starting here, with a sample PCOS-positive case (clears Rotterdam criteria, Metabolic-primary)"
           >
-            ⚡ Fill PCOS Case
+            Load PCOS Profile
           </button>
           <button
             type="button"
@@ -171,7 +171,7 @@ export default function Registration() {
             className="btn-ghost !px-4 !py-2 text-xs text-slate-400 hover:text-bio-200"
             title="Fills every step, starting here, with a sample healthy case (normal values throughout, does not meet Rotterdam criteria)"
           >
-            ⚡ Fill Healthy Case
+            Load Healthy Profile
           </button>
         </div>
 

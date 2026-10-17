@@ -98,13 +98,13 @@ export default function Profile() {
 
     if (res.success) {
       setUser(res.user)
-      setSaveStatus('✓ Profile changes successfully saved to Supabase!')
+      setSaveStatus('Profile changes successfully saved.')
       setTimeout(() => {
         setSaveStatus(null)
         setIsEditing(false)
       }, 1500)
     } else {
-      setSaveStatus('✕ Could not save changes. Please try again.')
+      setSaveStatus('Could not save changes. Please try again.')
     }
   }
 
@@ -144,7 +144,7 @@ export default function Profile() {
           onClick={() => setIsEditing(!isEditing)}
           className="btn-ghost !px-3.5 !py-1.5 text-xs text-bio-300 hover:text-bio-200 border border-bio-400/30 bg-bio-500/10 rounded-lg"
         >
-          {isEditing ? '✕ Cancel Editing' : '✏️ Edit Profile'}
+          {isEditing ? 'Cancel Editing' : 'Edit Profile'}
         </button>
       </div>
 
@@ -279,7 +279,7 @@ export default function Profile() {
                   onClick={() => setIsEditing(true)}
                   className="btn-primary !px-6 !py-2.5 text-xs font-semibold shadow-md shadow-bio-500/20"
                 >
-                  ✏️ Edit Personal Details
+                  Edit Personal Details
                 </button>
                 <Link
                   to="/dashboard"

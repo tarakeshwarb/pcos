@@ -315,8 +315,8 @@ export default function Dashboard({ initialTab }) {
               className="relative z-10 w-full max-w-lg rounded-2xl border border-bio-400/40 bg-slate-900/95 p-6 sm:p-8 shadow-2xl shadow-bio-500/20 backdrop-blur-xl"
             >
               <div className="flex items-center gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-bio-500/20 text-2xl ring-1 ring-bio-400/30">
-                  🩺
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-bio-500/20 text-bio-300 font-mono text-sm font-bold ring-1 ring-bio-400/30">
+                  Dx
                 </span>
                 <div>
                   <span className="rounded-full border border-bio-400/40 bg-bio-500/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-bio-300">
@@ -334,15 +334,15 @@ export default function Dashboard({ initialTab }) {
 
               <div className="mt-4 rounded-xl border border-white/5 bg-white/[0.02] p-3 text-xs text-slate-400 space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-bio-300 font-bold">✓</span>
+                  <span className="text-bio-300 font-bold">•</span>
                   <span>7 Distinct Questionnaire Categories stored in dedicated Supabase tables</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-bio-300 font-bold">✓</span>
+                  <span className="text-bio-300 font-bold">•</span>
                   <span>Each category has its own individual Save button</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-bio-300 font-bold">✓</span>
+                  <span className="text-bio-300 font-bold">•</span>
                   <span>Cuisine-Specific Nutritional Protocol & Workout Plan</span>
                 </div>
               </div>
@@ -405,7 +405,9 @@ export default function Dashboard({ initialTab }) {
           className="mb-8 flex flex-col items-start justify-between gap-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:p-5"
         >
           <div className="flex items-center gap-3">
-            <span className="text-2xl">⚠️</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/20 text-amber-300 font-mono text-xs font-bold border border-amber-400/30">
+              !
+            </span>
             <div>
               <p className="text-sm font-semibold text-amber-200">
                 PCOS Phenotype Assessment Pending
@@ -429,10 +431,10 @@ export default function Dashboard({ initialTab }) {
       {/* ============================================================ */}
       <div className="mb-8 flex flex-wrap gap-2 border-b border-white/10 pb-4">
         {[
-          { id: 'overview', label: 'Clinical Results & Overview', icon: '📊' },
-          { id: 'diet', label: 'Diet & Lifestyle Protocol', icon: '🥗' },
-          { id: 'journey', label: 'Daily Cycle Log', icon: '📅' },
-          { id: 'history', label: 'Past Reports History', icon: '📋' },
+          { id: 'overview', label: 'Clinical Results & Overview' },
+          { id: 'diet', label: 'Diet & Lifestyle Protocol' },
+          { id: 'journey', label: 'Daily Cycle Log' },
+          { id: 'history', label: 'Past Reports History' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -464,9 +466,9 @@ export default function Dashboard({ initialTab }) {
               <p className="text-xs text-slate-400">Diagnostic Status</p>
               <p className="mt-1 font-display text-base font-semibold text-white">
                 {lastResult ? (
-                  <span className="text-bio-300">✓ Assessed</span>
+                  <span className="text-bio-300">Assessed</span>
                 ) : (
-                  <span className="text-amber-300">Action Required</span>
+                  <span className="text-amber-300">Pending Evaluation</span>
                 )}
               </p>
             </GlassCard>
@@ -602,9 +604,11 @@ export default function Dashboard({ initialTab }) {
                   />
                 ) : (
                   <div className="py-16 text-center">
-                    <span className="text-4xl">🕸️</span>
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-slate-500 font-mono text-xs">
+                      Radar
+                    </div>
                     <p className="mt-3 text-xs text-slate-400 max-w-xs">
-                      Radar will illuminate once medical questionnaire answers or lab markers are saved.
+                      Radar chart will illuminate once medical questionnaire answers or lab markers are saved.
                     </p>
                     <Link
                       to="/assessment"
@@ -703,7 +707,7 @@ export default function Dashboard({ initialTab }) {
             <div className="mt-6 grid gap-6 md:grid-cols-3">
               <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-bio-300">
-                  🥗 Nutritional Strategy
+                  Nutritional Strategy
                 </h4>
                 <p className="mt-3 text-xs leading-relaxed text-slate-300">
                   {currentDietProtocol?.strategy ||
@@ -713,7 +717,7 @@ export default function Dashboard({ initialTab }) {
 
               <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                  🏃 Exercise Routine
+                  Exercise Routine
                 </h4>
                 <p className="mt-3 text-xs leading-relaxed text-slate-300">
                   {currentDietProtocol?.exercise ||
@@ -723,7 +727,7 @@ export default function Dashboard({ initialTab }) {
 
               <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-purple-300">
-                  💊 Targeted Supplements
+                  Targeted Supplements
                 </h4>
                 <p className="mt-3 text-xs leading-relaxed text-slate-300">
                   {currentDietProtocol?.supplements ||
@@ -830,7 +834,7 @@ export default function Dashboard({ initialTab }) {
                   Save Today's Check-in
                 </button>
                 {journeySavedNotice && (
-                  <span className="text-xs text-bio-300 font-semibold">✓ Saved to daily_logs table!</span>
+                  <span className="text-xs text-bio-300 font-semibold">Saved to daily logs.</span>
                 )}
               </div>
             </form>

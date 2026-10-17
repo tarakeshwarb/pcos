@@ -220,7 +220,7 @@ export default function Questionnaire() {
           ...prev,
           [sectionKey]: {
             type: 'success',
-            text: `✓ Saved answers to ${section.table} table in Supabase!`,
+            text: `Saved answers to ${section.table} table in Supabase.`,
           },
         }))
       } else {
@@ -228,7 +228,7 @@ export default function Questionnaire() {
           ...prev,
           [sectionKey]: {
             type: 'success',
-            text: `✓ Saved locally in your browser.`,
+            text: `Saved locally in your browser.`,
           },
         }))
       }
@@ -354,22 +354,22 @@ export default function Questionnaire() {
     <div className="relative min-h-screen">
       <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 pt-20 sm:pt-24">
         {/* ============================================================ */}
-        {/* TWO INTAKE OPTIONS SELECTOR (Chatbot as Main vs Form View)  */}
+        {/* TWO INTAKE OPTIONS SELECTOR (Consultation vs Form View)      */}
         {/* ============================================================ */}
         <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-white/10 bg-slate-900/80 p-4 backdrop-blur-xl shadow-2xl">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-bio-500/20 text-bio-300 border border-bio-400/30 text-xl shadow-glow">
-              {assessmentMode === 'chat' ? '💬' : '📋'}
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-bio-500/20 text-bio-300 border border-bio-400/30 text-xs font-mono font-bold">
+              {assessmentMode === 'chat' ? 'Dx' : 'Rx'}
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-white">Assessment Format:</span>
+                <span className="text-sm font-bold text-white">Intake Protocol Format</span>
                 <span className="rounded-full border border-bio-400/40 bg-bio-500/20 px-2 py-0.5 text-[10px] font-semibold text-bio-300">
-                  Two Options Available
+                  Select Format
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Choose between conversational intake or the structured category questionnaire.
+                Choose between conversational guided intake or structured clinical form categories.
               </p>
             </div>
           </div>
@@ -384,10 +384,9 @@ export default function Questionnaire() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>💬</span>
-              <span>AI Clinical Chatbot</span>
+              <span>Clinical Consultation</span>
               <span className="rounded-full bg-slate-950/30 px-1.5 py-0.2 text-[9px] font-extrabold uppercase tracking-wider text-slate-950">
-                Main
+                Primary
               </span>
             </button>
             <button
@@ -399,7 +398,6 @@ export default function Questionnaire() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>📋</span>
               <span>Category Form View</span>
             </button>
           </div>
@@ -429,93 +427,93 @@ export default function Questionnaire() {
             {/* TOP CONTROLS & DEMO SHORTCUTS                               */}
             {/* ============================================================ */}
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className="flex h-2 w-2 rounded-full bg-bio-400 animate-pulse" />
-            <span>
-              {currentUser?.email ? (
-                <>
-                  Logged in as <strong className="text-white">{currentUser.email}</strong> · Synced to Supabase tables
-                </>
-              ) : (
-                'Medical Assessment Center'
-              )}
-            </span>
-          </div>
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <span className="flex h-2 w-2 rounded-full bg-bio-400 animate-pulse" />
+                <span>
+                  {currentUser?.email ? (
+                    <>
+                      Authenticated as <strong className="text-white">{currentUser.email}</strong> · Database Connected
+                    </>
+                  ) : (
+                    'Clinical Diagnostic Center'
+                  )}
+                </span>
+              </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {demoProfile && (
-              <span className="rounded-full border border-bio-400/30 bg-bio-500/10 px-3 py-1 text-xs text-bio-200">
-                Demo: {demoProfile === 'pcos' ? 'PCOS Profile' : 'Healthy Profile'}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => loadDemo('pcos')}
-              className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-bio-200"
-              title="Fills every question with a PCOS-positive profile"
-            >
-              ⚡ Fill PCOS Case
-            </button>
-            <button
-              type="button"
-              onClick={() => loadDemo('healthy')}
-              className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-bio-200"
-              title="Fills every question with normal values"
-            >
-              ⚡ Fill Healthy Case
-            </button>
-            <label className="btn-ghost !px-3 !py-1.5 text-xs text-bio-300 hover:text-white cursor-pointer border border-bio-400/30">
-              📄 Upload Blood Report (OCR)
-              <input
-                type="file"
-                accept=".pdf,.png,.jpg,.jpeg"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </label>
-          </div>
-        </div>
-
-        {/* OCR Status Banner */}
-        {uploadStatus && (
-          <div className="mb-6 rounded-xl border border-bio-400/40 bg-bio-500/10 px-4 py-3 text-xs text-bio-200 flex items-center justify-between">
-            <span>{uploadStatus}</span>
-            <button onClick={() => setUploadStatus(null)} className="text-slate-400 hover:text-white font-bold ml-3">✕</button>
-          </div>
-        )}
-        {uploadError && (
-          <div className="mb-6 rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-xs text-rose-300 flex items-center justify-between">
-            <span>{uploadError}</span>
-            <button onClick={() => setUploadError(null)} className="text-slate-400 hover:text-white font-bold ml-3">✕</button>
-          </div>
-        )}
-
-        {/* ============================================================ */}
-        {/* TITLE & OVERALL PROGRESS                                     */}
-        {/* ============================================================ */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <span className="chip mb-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-bio-300" />
-                7 Clinical Questionnaire Categories
-              </span>
-              <h1 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                Clinical PCOS Assessment
-              </h1>
-              <p className="mt-2 text-sm text-slate-300 max-w-2xl">
-                Jump between any category below to check or update your answers. Each category has its own individual <strong>Save</strong> button that records data directly into its dedicated Supabase table. When finished, view your comprehensive results on the Dashboard.
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {demoProfile && (
+                  <span className="rounded-full border border-bio-400/30 bg-bio-500/10 px-3 py-1 text-xs text-bio-200">
+                    Active Demo: {demoProfile === 'pcos' ? 'PCOS Profile' : 'Healthy Profile'}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => loadDemo('pcos')}
+                  className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-bio-200"
+                  title="Fills every question with a PCOS-positive profile"
+                >
+                  Load PCOS Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadDemo('healthy')}
+                  className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-bio-200"
+                  title="Fills every question with normal values"
+                >
+                  Load Healthy Profile
+                </button>
+                <label className="btn-ghost !px-3 !py-1.5 text-xs text-bio-300 hover:text-white cursor-pointer border border-bio-400/30">
+                  Upload Lab Report (OCR)
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
             </div>
 
-            <Link
-              to="/dashboard"
-              className="btn-ghost shrink-0 self-start sm:self-auto !px-4 !py-2.5 text-xs font-semibold text-bio-300 hover:text-white border border-bio-400/30"
-              title="Go to Dashboard to view calculated results"
-            >
-              📊 View Results on Dashboard →
-            </Link>
-          </div>
+            {/* OCR Status Banner */}
+            {uploadStatus && (
+              <div className="mb-6 rounded-xl border border-bio-400/40 bg-bio-500/10 px-4 py-3 text-xs text-bio-200 flex items-center justify-between">
+                <span>{uploadStatus}</span>
+                <button onClick={() => setUploadStatus(null)} className="text-slate-400 hover:text-white font-bold ml-3">Dismiss</button>
+              </div>
+            )}
+            {uploadError && (
+              <div className="mb-6 rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-xs text-rose-300 flex items-center justify-between">
+                <span>{uploadError}</span>
+                <button onClick={() => setUploadError(null)} className="text-slate-400 hover:text-white font-bold ml-3">Dismiss</button>
+              </div>
+            )}
+
+            {/* ============================================================ */}
+            {/* TITLE & OVERALL PROGRESS                                     */}
+            {/* ============================================================ */}
+            <div className="mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <span className="chip mb-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-bio-300" />
+                    7 Clinical Evaluation Categories
+                  </span>
+                  <h1 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                    Clinical PCOS Diagnostic Assessment
+                  </h1>
+                  <p className="mt-2 text-sm text-slate-300 max-w-2xl leading-relaxed">
+                    Navigate between clinical categories below to review and record your diagnostic parameters. Each category records data directly into dedicated clinical tables.
+                  </p>
+                </div>
+
+                <Link
+                  to="/dashboard"
+                  className="btn-ghost shrink-0 self-start sm:self-auto !px-4 !py-2.5 text-xs font-semibold text-bio-300 hover:text-white border border-bio-400/30"
+                  title="Go to Dashboard to view calculated results"
+                >
+                  View Results on Dashboard →
+                </Link>
+              </div>
 
           {/* Progress Bar */}
           <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-4 backdrop-blur-md">
@@ -568,7 +566,7 @@ export default function Questionnaire() {
                   }`}
                 >
                   <div className="flex items-center justify-between gap-1 mb-2">
-                    <span className="text-base">{sec.icon}</span>
+                    <span className="font-mono text-xs font-bold text-bio-300">0{sec.number}</span>
                     <span
                       className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                         prog.isComplete
@@ -578,7 +576,7 @@ export default function Questionnaire() {
                           : 'border border-white/10 bg-white/5 text-slate-400'
                       }`}
                     >
-                      {prog.isComplete ? `✓ ${prog.filled}/${prog.total}` : `${prog.filled}/${prog.total}`}
+                      {prog.filled}/{prog.total}
                     </span>
                   </div>
 
@@ -661,10 +659,7 @@ export default function Questionnaire() {
                       <Spinner /> Saving to {activeSection.table}…
                     </>
                   ) : (
-                    <>
-                      <span>💾</span>
-                      <span>Save {activeSection.short} Answers</span>
-                    </>
+                    <span>Save {activeSection.short} Answers</span>
                   )}
                 </button>
                 <span className="text-[11px] text-slate-400">
@@ -775,7 +770,7 @@ export default function Questionnaire() {
                   {savingCategory === activeSection.key ? (
                     'Saving…'
                   ) : (
-                    `💾 Save ${activeSection.short}`
+                    `Save ${activeSection.short}`
                   )}
                 </button>
 
@@ -786,7 +781,7 @@ export default function Questionnaire() {
                     onClick={() => handleSaveCategory(activeSection.key, true)}
                     className="btn-primary !px-5 !py-2.5 text-xs font-semibold"
                   >
-                    Save & Jump to Next Category →
+                    Save & Proceed to Next Category →
                   </button>
                 ) : (
                   <button
@@ -800,7 +795,7 @@ export default function Questionnaire() {
                         <Spinner /> Generating Diagnostic Report…
                       </>
                     ) : (
-                      '🚀 Save & View Results on Dashboard →'
+                      'Save & Generate Diagnostic Report →'
                     )}
                   </button>
                 )}
