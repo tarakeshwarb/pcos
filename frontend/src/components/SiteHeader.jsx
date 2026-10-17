@@ -38,8 +38,13 @@ export default function SiteHeader() {
               <Link to="/dashboard" className="btn-ghost !px-3.5 !py-2 text-xs font-semibold text-bio-300 hover:text-white">
                 📊 Dashboard
               </Link>
-              <Link to="/assessment" className="btn-ghost !px-3.5 !py-2 text-xs text-slate-300 hidden sm:inline-flex">
-                🩺 Assessment
+              <Link to="/assessment?mode=chat" className="btn-ghost !px-3.5 !py-2 text-xs font-semibold text-bio-200 hover:text-white flex items-center gap-1.5">
+                <span>💬</span>
+                <span>AI Chatbot</span>
+              </Link>
+              <Link to="/assessment?mode=form" className="btn-ghost !px-3.5 !py-2 text-xs text-slate-300 hidden sm:inline-flex items-center gap-1.5">
+                <span>🩺</span>
+                <span>Assessment Form</span>
               </Link>
               <Link to="/journey" className="btn-ghost !px-3.5 !py-2 text-xs text-slate-300 hidden sm:inline-flex">
                 📅 Daily Log

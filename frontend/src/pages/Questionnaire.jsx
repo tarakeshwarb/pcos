@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import GlassCard from '../components/GlassCard.jsx'
 import QuestionCard from '../components/QuestionCard.jsx'
+import ChatbotAssessment from '../components/ChatbotAssessment.jsx'
 import {
   getCurrentUser,
   saveAssessmentCategory,
@@ -13,100 +14,7 @@ import {
 import { questionnaire, liveBmi, runPipeline } from '../lib/ruleEngine.js'
 import { extractReportData } from '../lib/reportExtractor.js'
 import { PCOS_CASE, HEALTHY_CASE } from '../data/demoProfiles.js'
-
-// ============================================================
-// 7 REAL Questionnaire Categories from questionnaire.json
-// mapped directly to dedicated Supabase assessment tables
-// ============================================================
-export const ASSESSMENT_SECTIONS = [
-  {
-    key: 'first_line',
-    number: 1,
-    title: 'First-Line Testing',
-    subtitle: 'Rotterdam Diagnostic Gate',
-    short: 'First-Line',
-    icon: '🔬',
-    desc: 'Rotterdam international consensus criteria: irregular menstrual cycles, clinical or biochemical androgen excess, and polycystic ovarian morphology.',
-    table: 'assessment_first_line',
-    questions: questionnaire.first_line?.questions || [],
-  },
-  {
-    key: 'metabolic',
-    number: 2,
-    title: 'Metabolic Phenotype Axis',
-    subtitle: 'Insulin Resistance & Glucose Dynamics',
-    short: 'Metabolic',
-    icon: '⚡',
-    desc: 'Evaluates fasting insulin, HOMA-IR, glucose tolerance, lipid ratios, visceral weight distribution, and acanthosis nigricans.',
-    table: 'assessment_metabolic',
-    questions: questionnaire.phenotypes?.metabolic?.questions || [],
-  },
-  {
-    key: 'hormonal',
-    number: 3,
-    title: 'Hormonal Phenotype Axis',
-    subtitle: 'Ovarian Hyperandrogenism & LH/FSH',
-    short: 'Hormonal',
-    icon: '🧬',
-    desc: 'Evaluates LH:FSH ratio, total & free testosterone, SHBG, hirsutism (Ferriman-Gallwey scale), and post-pill amenorrhea.',
-    table: 'assessment_hormonal',
-    questions: questionnaire.phenotypes?.hormonal?.questions || [],
-  },
-  {
-    key: 'adrenal',
-    number: 4,
-    title: 'Adrenal Phenotype Axis',
-    subtitle: 'Stress-Driven HPA & Cortisol',
-    short: 'Adrenal',
-    icon: '🧘',
-    desc: 'Evaluates DHEA-S, morning cortisol, resting vitals, Perceived Stress Scale (PSS-10), and sleep disruption.',
-    table: 'assessment_adrenal',
-    questions: questionnaire.phenotypes?.adrenal?.questions || [],
-  },
-  {
-    key: 'inflammatory',
-    number: 5,
-    title: 'Inflammatory Phenotype Axis',
-    subtitle: 'Systemic Inflammation & Gut Dysbiosis',
-    short: 'Inflammatory',
-    icon: '🛡️',
-    desc: 'Evaluates hs-CRP, ESR, gut permeability/IBS symptoms, food intolerances, chronic fatigue, and joint pain.',
-    table: 'assessment_inflammatory',
-    questions: questionnaire.phenotypes?.inflammatory?.questions || [],
-  },
-  {
-    key: 'mitochondrial',
-    number: 6,
-    title: 'Energy Screen (Mitochondrial)',
-    subtitle: 'Cellular Bioenergetics & Fatigue',
-    short: 'Energy Screen',
-    icon: '🔋',
-    desc: 'Screens for cellular mitochondrial depletion, post-meal brain fog, sudden energy crashes, and poor exercise recovery.',
-    table: 'assessment_mitochondrial',
-    questions: questionnaire.mitochondrial_axis?.questions || [],
-  },
-  {
-    key: 'exclusions',
-    number: 7,
-    title: 'Exclusion Criteria & Differentials',
-    subtitle: 'Ruling Out Mimicking Conditions',
-    short: 'Exclusions',
-    icon: '🩺',
-    desc: 'Rules out mimicking conditions including thyroid disorders (TSH), hyperprolactinemia, and congenital adrenal hyperplasia.',
-    table: 'assessment_exclusions',
-    questions: questionnaire.exclusions?.questions || [],
-  },
-]
-
-// Identify the primary step for shared questions so they sync across sections
-const PRIMARY_STEP_FOR_SHARED_FIELD = {}
-for (const sec of ASSESSMENT_SECTIONS) {
-  for (const q of sec.questions || []) {
-    if (q.shared_field && !(q.shared_field in PRIMARY_STEP_FOR_SHARED_FIELD)) {
-      PRIMARY_STEP_FOR_SHARED_FIELD[q.shared_field] = sec.key
-    }
-  }
-}
+import { ASSESSMENT_SECTIONS, PRIMARY_STEP_FOR_SHARED_FIELD } from '../data/assessmentSections.js'
 
 export default function Questionnaire() {
   const navigate = useNavigate()
@@ -116,6 +24,9 @@ export default function Questionnaire() {
   const [answers, setAnswers] = useState({})
   const [activeCategoryKey, setActiveCategoryKey] = useState(
     searchParams.get('category') || 'first_line'
+  )
+  const [assessmentMode, setAssessmentMode] = useState(
+    searchParams.get('mode') || 'chat'
   )
 
   const [loadingInitial, setLoadingInitial] = useState(true)
@@ -179,13 +90,26 @@ export default function Questionnaire() {
     }
   }, [])
 
-  // Sync active category with URL param
+  // Sync active category and mode with URL params
   useEffect(() => {
     const cat = searchParams.get('category')
     if (cat && ASSESSMENT_SECTIONS.some((s) => s.key === cat)) {
       setActiveCategoryKey(cat)
     }
+    const m = searchParams.get('mode')
+    if (m === 'form' || m === 'chat') {
+      setAssessmentMode(m)
+    }
   }, [searchParams])
+
+  function switchMode(newMode) {
+    setAssessmentMode(newMode)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('mode', newMode)
+      return next
+    })
+  }
 
   // Answer change handler
   const handleAnswerChange = (key, value) => {
@@ -430,9 +354,81 @@ export default function Questionnaire() {
     <div className="relative min-h-screen">
       <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 pt-20 sm:pt-24">
         {/* ============================================================ */}
-        {/* TOP CONTROLS & DEMO SHORTCUTS                               */}
+        {/* TWO INTAKE OPTIONS SELECTOR (Chatbot as Main vs Form View)  */}
         {/* ============================================================ */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+        <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-white/10 bg-slate-900/80 p-4 backdrop-blur-xl shadow-2xl">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-bio-500/20 text-bio-300 border border-bio-400/30 text-xl shadow-glow">
+              {assessmentMode === 'chat' ? '💬' : '📋'}
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white">Assessment Format:</span>
+                <span className="rounded-full border border-bio-400/40 bg-bio-500/20 px-2 py-0.5 text-[10px] font-semibold text-bio-300">
+                  Two Options Available
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Choose between conversational intake or the structured category questionnaire.
+              </p>
+            </div>
+          </div>
+
+          <div className="inline-flex p-1.5 rounded-xl bg-slate-950/80 border border-white/10 shadow-inner">
+            <button
+              type="button"
+              onClick={() => switchMode('chat')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+                assessmentMode === 'chat'
+                  ? 'bg-gradient-to-r from-bio-400 to-bio-500 text-slate-950 shadow-md shadow-bio-500/25 font-bold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>💬</span>
+              <span>AI Clinical Chatbot</span>
+              <span className="rounded-full bg-slate-950/30 px-1.5 py-0.2 text-[9px] font-extrabold uppercase tracking-wider text-slate-950">
+                Main
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode('form')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+                assessmentMode === 'form'
+                  ? 'bg-gradient-to-r from-bio-400 to-bio-500 text-slate-950 shadow-md shadow-bio-500/25 font-bold'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>📋</span>
+              <span>Category Form View</span>
+            </button>
+          </div>
+        </div>
+
+        {assessmentMode === 'chat' ? (
+          <ChatbotAssessment
+            answers={answers}
+            onAnswerChange={handleAnswerChange}
+            onSaveCategory={handleSaveCategory}
+            onFinalSubmit={handleFinalSubmit}
+            currentUser={currentUser}
+            demoProfile={demoProfile}
+            onLoadDemo={loadDemo}
+            onFileUpload={handleFileUpload}
+            uploadStatus={uploadStatus}
+            uploadError={uploadError}
+            setUploadStatus={setUploadStatus}
+            setUploadError={setUploadError}
+            extractedFlags={extractedFlags}
+            overallProgress={overallProgress}
+            onSwitchToForm={() => switchMode('form')}
+          />
+        ) : (
+          <div>
+            {/* ============================================================ */}
+            {/* TOP CONTROLS & DEMO SHORTCUTS                               */}
+            {/* ============================================================ */}
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <span className="flex h-2 w-2 rounded-full bg-bio-400 animate-pulse" />
             <span>
@@ -826,6 +822,8 @@ export default function Questionnaire() {
             )}
           </GlassCard>
         </div>
+          </div>
+        )}
       </div>
     </div>
   )
