@@ -129,12 +129,12 @@ export default function Profile() {
   if (!user) return null
 
   return (
-    <div className="relative mx-auto max-w-4xl px-4 py-16 pt-24 sm:px-6">
+    <div className="relative mx-auto max-w-4xl px-4 py-16 pt-24 sm:px-6 bg-white">
       {/* Top Breadcrumb Navigation */}
       <div className="mb-6 flex items-center justify-between">
         <Link
           to="/dashboard"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
         >
           <span>← Back to Dashboard</span>
         </Link>
@@ -142,7 +142,7 @@ export default function Profile() {
         <button
           type="button"
           onClick={() => setIsEditing(!isEditing)}
-          className="btn-ghost !px-3.5 !py-1.5 text-xs text-bio-300 hover:text-bio-200 border border-bio-400/30 bg-bio-500/10 rounded-lg"
+          className="btn-ghost !px-3.5 !py-1.5 text-xs text-rose-600 hover:text-rose-700 border border-rose-200 bg-rose-50 rounded-lg"
         >
           {isEditing ? 'Cancel Editing' : 'Edit Profile'}
         </button>
@@ -155,27 +155,27 @@ export default function Profile() {
       >
         <div className="mb-6">
           <div className="flex items-center gap-2">
-            <span className="rounded-full border border-bio-400/30 bg-bio-500/10 px-3 py-0.5 text-xs font-semibold text-bio-300">
+            <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-0.5 text-xs font-semibold text-rose-700">
               Personal Account & Demographics
             </span>
-            <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 font-mono text-[10px] text-slate-400">
+            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 font-mono text-[10px] text-slate-500">
               Table: registrations
             </span>
           </div>
-          <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <h1 className="mt-3 font-heading text-3xl sm:text-4xl font-semibold tracking-[-0.025em] text-[#0A192F]">
             {isEditing ? 'Edit Personal Details' : 'Personal Details & Health Profile'}
           </h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm sm:text-base text-slate-600 leading-[1.6] font-normal">
             Keep your personal demographics and contact details updated. Changes sync directly to your Supabase account.
           </p>
         </div>
 
-        <GlassCard strong className="p-6 sm:p-8 shadow-2xl">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
           {saveStatus && (
             <motion.div
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mb-6 rounded-xl border border-bio-400/30 bg-bio-500/10 px-4 py-3 text-xs font-semibold text-bio-300"
+              className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-800"
             >
               {saveStatus}
             </motion.div>
@@ -187,85 +187,85 @@ export default function Profile() {
           {!isEditing ? (
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                     Full Name
                   </span>
-                  <p className="mt-1 text-sm font-semibold text-white">
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
                     {formData.full_name || 'Not provided'}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                     Email Address (Account ID)
                   </span>
-                  <p className="mt-1 text-sm font-semibold text-bio-200 truncate" title={formData.email}>
+                  <p className="mt-1 text-sm font-semibold text-rose-600 truncate" title={formData.email}>
                     {formData.email || 'Not provided'}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                     Date of Birth
                   </span>
-                  <p className="mt-1 text-sm font-semibold text-white">
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
                     {formData.dob || 'Not provided'}
                     {formData.age ? ` (${formData.age} yrs)` : ''}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                     Phone Number
                   </span>
-                  <p className="mt-1 text-sm font-semibold text-white">
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
                     {formData.phone || 'Not provided'}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                     Height
                   </span>
-                  <p className="mt-1 text-sm font-semibold text-white">
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
                     {formData.height ? `${formData.height} cm` : 'Not provided'}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                     Weight
                   </span>
-                  <p className="mt-1 text-sm font-semibold text-white">
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
                     {formData.weight ? `${formData.weight} kg` : 'Not provided'}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                     Regional Cuisine
                   </span>
-                  <p className="mt-1 text-sm font-semibold text-white">
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
                     {formData.region_preference}
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                     Dietary Pattern
                   </span>
-                  <p className="mt-1 text-sm font-semibold text-white">
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
                     {formData.diet_type}
                   </p>
                 </div>
               </div>
 
               {bmi && (
-                <div className="rounded-xl border border-bio-400/20 bg-bio-500/5 p-4 flex items-center justify-between">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between">
                   <div>
-                    <span className="text-xs text-slate-400">Calculated Body Mass Index (BMI)</span>
-                    <p className="text-lg font-bold text-white">{bmi} kg/m²</p>
+                    <span className="text-xs text-slate-500">Calculated Body Mass Index (BMI)</span>
+                    <p className="text-lg font-bold text-slate-900">{bmi} kg/m²</p>
                   </div>
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${getBmiBadge(bmi).color}`}>
                     {getBmiBadge(bmi).text}
@@ -273,19 +273,19 @@ export default function Profile() {
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-3 border-t border-white/5 pt-6">
+              <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-6">
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  className="btn-primary !px-6 !py-2.5 text-xs font-semibold shadow-md shadow-bio-500/20"
+                  className="btn-primary !px-6 !py-2.5 text-xs font-semibold shadow-sm"
                 >
                   Edit Personal Details
                 </button>
                 <Link
                   to="/dashboard"
-                  className="btn-ghost !px-5 !py-2.5 text-xs text-slate-300"
+                  className="btn-ghost !px-5 !py-2.5 text-xs text-slate-700"
                 >
-                  Go to Dashboard →
+                  Go to Dashboard
                 </Link>
               </div>
             </div>
@@ -296,7 +296,7 @@ export default function Profile() {
             <form onSubmit={handleProfileSave} className="space-y-6">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Full Name
                   </label>
                   <input
@@ -304,36 +304,36 @@ export default function Profile() {
                     required
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Email Address (Account ID)
                   </label>
                   <input
                     type="email"
                     disabled
                     value={formData.email}
-                    className="w-full rounded-xl border border-white/5 bg-white/5 px-4 py-2.5 text-xs text-slate-500 cursor-not-allowed"
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-xs text-slate-400 cursor-not-allowed"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Date of Birth
                   </label>
                   <input
                     type="date"
                     value={formData.dob}
                     onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Phone Number
                   </label>
                   <input
@@ -341,12 +341,12 @@ export default function Profile() {
                     placeholder="+91..."
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Height (cm)
                   </label>
                   <input
@@ -354,12 +354,12 @@ export default function Profile() {
                     placeholder="e.g. 165"
                     value={formData.height}
                     onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Weight (kg)
                   </label>
                   <input
@@ -367,18 +367,18 @@ export default function Profile() {
                     placeholder="e.g. 62"
                     value={formData.weight}
                     onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Regional Cuisine
                   </label>
                   <select
                     value={formData.region_preference}
                     onChange={(e) => setFormData({ ...formData, region_preference: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   >
                     <option value="South Indian">South Indian</option>
                     <option value="North Indian">North Indian</option>
@@ -388,13 +388,13 @@ export default function Profile() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Dietary Pattern
                   </label>
                   <select
                     value={formData.diet_type}
                     onChange={(e) => setFormData({ ...formData, diet_type: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   >
                     <option value="Vegetarian">Vegetarian</option>
                     <option value="Eggetarian">Eggetarian</option>
@@ -405,10 +405,10 @@ export default function Profile() {
               </div>
 
               {bmi && (
-                <div className="rounded-xl border border-bio-400/20 bg-bio-500/5 p-4 flex items-center justify-between">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between">
                   <div>
-                    <span className="text-xs text-slate-400">Calculated Body Mass Index (BMI)</span>
-                    <p className="text-lg font-bold text-white">{bmi} kg/m²</p>
+                    <span className="text-xs text-slate-500">Calculated Body Mass Index (BMI)</span>
+                    <p className="text-lg font-bold text-slate-900">{bmi} kg/m²</p>
                   </div>
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${getBmiBadge(bmi).color}`}>
                     {getBmiBadge(bmi).text}
@@ -416,25 +416,25 @@ export default function Profile() {
                 </div>
               )}
 
-              <div className="flex gap-3 pt-4 border-t border-white/5">
+              <div className="flex gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={handleCancelEdit}
-                  className="btn-ghost !px-5 !py-2.5 text-xs text-slate-300"
+                  className="btn-ghost !px-5 !py-2.5 text-xs text-slate-600"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="btn-primary !px-6 !py-2.5 text-xs font-semibold shadow-md shadow-bio-500/20 disabled:opacity-60"
+                  className="btn-primary !px-6 !py-2.5 text-xs font-semibold shadow-sm disabled:opacity-60"
                 >
                   {saving ? 'Saving…' : 'Save Profile Changes'}
                 </button>
               </div>
             </form>
           )}
-        </GlassCard>
+        </div>
       </motion.div>
     </div>
   )

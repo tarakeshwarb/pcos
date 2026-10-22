@@ -137,9 +137,9 @@ export default function Results() {
 
         <div className="mt-14 flex flex-wrap items-center justify-center gap-4 print:hidden">
           <Link to="/assessment" className="btn-ghost">Retake Assessment</Link>
-          <Link to="/journey" className="btn-ghost">Log This in My Journey</Link>
+          <Link to="/journey" className="btn-ghost">Open Daily Log</Link>
           <button onClick={() => window.print()} className="btn-primary">
-            Save / Print Report
+            Save Report
           </button>
         </div>
       </div>
@@ -155,10 +155,10 @@ function ClassificationBanner({ classification, isMixed, isInconclusive, isExclu
         <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div>
             <span className="chip">
-              <span className="h-1.5 w-1.5 rounded-full bg-bio-300 animate-pulse" />
-              Automatically Scored From Your Responses
+              <span className="h-1.5 w-1.5 rounded-full bg-bio-300" />
+              Diagnostic Report
             </span>
-            <h1 className="mt-4 font-display text-3xl font-bold text-white sm:text-4xl">
+            <h1 className="mt-4 font-heading text-3xl sm:text-4xl font-semibold tracking-[-0.025em] text-[#0A192F]">
               {isExcluded ? (
                 'Excluded — See a Doctor First'
               ) : isInconclusive ? (
@@ -168,13 +168,13 @@ function ClassificationBanner({ classification, isMixed, isInconclusive, isExclu
               ) : isMixed ? (
                 <>
                   Mixed Phenotype:{' '}
-                  <span className="text-gradient-bio">
+                  <span className="text-[#7C3AED] font-semibold">
                     {classification.phenotypes_involved.map((p) => PHENOTYPE_META[p].label).join(' + ')}
                   </span>
                 </>
               ) : classification.primary_phenotype && PHENOTYPE_META[classification.primary_phenotype] ? (
                 <>
-                  Primary Phenotype: <span className="text-gradient-bio">{PHENOTYPE_META[classification.primary_phenotype].label}</span>
+                  Primary Phenotype: <span className="text-[#7C3AED] font-semibold">{PHENOTYPE_META[classification.primary_phenotype].label}</span>
                 </>
               ) : (
                 classification.classification

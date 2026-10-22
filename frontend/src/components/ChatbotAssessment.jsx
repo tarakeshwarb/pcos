@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ASSESSMENT_SECTIONS } from '../data/assessmentSections.js'
-import { liveBmi, runPipeline } from '../lib/ruleEngine.js'
+import { liveBmi } from '../lib/ruleEngine.js'
+import { processChatMessage } from '../lib/clinicalNlp.js'
 
 export default function ChatbotAssessment({
-  answers,
+  answers = {},
   onAnswerChange,
   onSaveCategory,
   onFinalSubmit,
@@ -19,21 +20,47 @@ export default function ChatbotAssessment({
   extractedFlags = {},
   overallProgress,
   onSwitchToForm,
+  activeCategoryKey,
+  onSelectCategory,
 }) {
-  // Category & Question index within that category
-  const [activeCatIndex, setActiveCatIndex] = useState(0)
+  // Category & Question index
+  const initialCatIdx = useMemo(() => {
+    if (!activeCategoryKey) return 0
+    const idx = ASSESSMENT_SECTIONS.findIndex((s) => s.key === activeCategoryKey)
+    return idx >= 0 ? idx : 0
+  }, [activeCategoryKey])
+
+  const [activeCatIndex, setActiveCatIndex] = useState(initialCatIdx)
   const [activeQIndex, setActiveQIndex] = useState(0)
-
-  // Temporary local input value for number fields before submitting
   const [numInputs, setNumInputs] = useState({})
-
-  // Show drawer/modal of questions in current category to quickly review/jump
-  const [showCategoryReview, setShowCategoryReview] = useState(false)
-  const [notice, setNotice] = useState(null)
+  const [toastNotice, setToastNotice] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showCategoryMenu, setShowCategoryMenu] = useState(false)
+
+  // Mini-ChatGPT Conversation Message Stream
+  const [chatMessages, setChatMessages] = useState([
+    {
+      id: 'welcome',
+      sender: 'assistant',
+      text: `Hello! I am your HelixDx Clinical Intake Assistant. I'll guide you through your PCOS phenotype diagnostic evaluation according to the Rotterdam Consensus.\n\nYou can select options on the card below or type naturally here (e.g. *"change weight to 65kg"*, *"my cycle is irregular"*, or *"set acne to no"*).`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    },
+  ])
+  const [inputMessage, setInputMessage] = useState('')
 
   const chatEndRef = useRef(null)
-  const inputCardRef = useRef(null)
+  const fileInputRef = useRef(null)
+
+  // Sync category from parent prop
+  useEffect(() => {
+    if (activeCategoryKey) {
+      const idx = ASSESSMENT_SECTIONS.findIndex((s) => s.key === activeCategoryKey)
+      if (idx >= 0 && idx !== activeCatIndex) {
+        setActiveCatIndex(idx)
+        setActiveQIndex(0)
+      }
+    }
+  }, [activeCategoryKey])
 
   const currentCategory = ASSESSMENT_SECTIONS[activeCatIndex] || ASSESSMENT_SECTIONS[0]
   const currentQuestions = currentCategory.questions || []
@@ -53,110 +80,185 @@ export default function ChatbotAssessment({
     }
   }, [currentQuestion, answers])
 
-  // Scroll to input or bottom when changing questions
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [activeQIndex, activeCatIndex])
-
-  // Category progress stats
-  function getCategoryStats(cat) {
-    let total = 0
-    let filled = 0
-    for (const q of cat.questions) {
-      if (q.fields) {
-        for (const f of q.fields) {
-          total++
-          const v = answers[f.key]
-          if (v !== undefined && v !== '' && v !== null) filled++
-        }
-      }
-    }
-    return {
-      total,
-      filled,
-      isComplete: total > 0 && filled === total,
-      percentage: total > 0 ? Math.round((filled / total) * 100) : 0,
-    }
-  }
-
-  const catStats = useMemo(() => getCategoryStats(currentCategory), [currentCategory, answers])
-
-  // Is current question answered?
-  const isCurrentQuestionAnswered = useMemo(() => {
-    if (!currentQuestion?.fields?.length) return false
-    return currentQuestion.fields.some(
-      (f) => answers[f.key] !== undefined && answers[f.key] !== '' && answers[f.key] !== null
-    )
-  }, [currentQuestion, answers])
+  }, [activeQIndex, activeCatIndex, chatMessages])
 
   // Live BMI calculation
   const calculatedBmi = useMemo(() => {
     return liveBmi(answers.height_cm, answers.weight_kg)
   }, [answers.height_cm, answers.weight_kg])
 
-  // Handle single field answer
-  const handleSingleAnswer = (key, value) => {
-    onAnswerChange(key, value)
-    showToastNotice('Response recorded')
-
-    // Advance to next question smoothly
-    setTimeout(() => {
-      advanceNext()
-    }, 300)
+  const showToast = (msg) => {
+    setToastNotice(msg)
+    setTimeout(() => setToastNotice(null), 2000)
   }
 
-  // Handle multi-field submission (e.g. number fields)
-  const handleSubmitNumberFields = () => {
+  // Record answer WITHOUT changing the question
+  const handleSelectOption = (key, val) => {
+    onAnswerChange(key, val)
+    const valText = val === 'yes' ? 'Yes' : val === 'no' ? 'No' : val
+    showToast(`Option selected: ${valText}`)
+
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        sender: 'assistant',
+        text: `Recorded **${valText}** for "${currentQuestion.label || currentQuestion.text}". Click Next or type to adjust.`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ])
+  }
+
+  // Save number fields WITHOUT changing the question
+  const handleSaveNumbers = () => {
+    let saved = false
+    const savedValues = []
     for (const [key, val] of Object.entries(numInputs)) {
       if (val !== '' && val !== null && val !== undefined) {
         onAnswerChange(key, Number(val))
+        saved = true
+        savedValues.push(`${val}`)
       }
     }
-    showToastNotice('Parameters recorded')
-    setTimeout(() => {
-      advanceNext()
-    }, 300)
+    if (saved) {
+      showToast('Value saved')
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          sender: 'assistant',
+          text: `Saved **${savedValues.join(', ')}** for "${currentQuestion.label || currentQuestion.text}".`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ])
+    }
   }
 
-  // Advance to next question or next category
+  // Mini-ChatGPT natural language submission
+  const handleSendMessage = (e) => {
+    if (e) e.preventDefault()
+    const text = inputMessage.trim()
+    if (!text) return
+
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    const userMsg = {
+      id: Date.now(),
+      sender: 'user',
+      text,
+      time: nowTime,
+    }
+
+    setChatMessages((prev) => [...prev, userMsg])
+    setInputMessage('')
+
+    // Process NLP offline
+    const result = processChatMessage(text, currentQuestion, answers)
+    if (!result) {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: 'assistant',
+          text: `I received your message. You can enter values directly on the question card or say "change weight to 65 kg" or "cycle: irregular".`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ])
+      return
+    }
+
+    if (result.type === 'update') {
+      onAnswerChange(result.fieldKey, result.value)
+      showToast(`Updated: ${result.fieldLabel}`)
+
+      // If category belongs elsewhere, switch to it smoothly
+      if (result.categoryKey && result.categoryKey !== currentCategory.key) {
+        const catIdx = ASSESSMENT_SECTIONS.findIndex((s) => s.key === result.categoryKey)
+        if (catIdx >= 0) {
+          setActiveCatIndex(catIdx)
+          onSelectCategory?.(result.categoryKey)
+        }
+      }
+
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: 'assistant',
+          text: result.message,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ])
+    } else if (result.type === 'nav') {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: 'assistant',
+          text: result.message,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ])
+
+      if (result.action === 'next') {
+        advanceNext()
+      } else if (result.action === 'prev') {
+        movePrev()
+      } else if (result.action === 'save') {
+        onSaveCategory?.(currentCategory.key)
+        showToast(`Saved ${currentCategory.short}`)
+      } else if (result.action === 'submit') {
+        handleFinalReport()
+      }
+    } else {
+      // reply, summary, help, greeting
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          sender: 'assistant',
+          text: result.message,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        },
+      ])
+    }
+  }
+
+  // Advance question only on explicit button click
   const advanceNext = () => {
+    if (currentQuestion?.fields?.some((f) => f.type === 'number')) {
+      handleSaveNumbers()
+    }
+
     if (activeQIndex < currentQuestions.length - 1) {
       setActiveQIndex((prev) => prev + 1)
     } else {
-      // Finished current category
       onSaveCategory?.(currentCategory.key)
       if (activeCatIndex < ASSESSMENT_SECTIONS.length - 1) {
-        setActiveCatIndex((prev) => prev + 1)
+        const nextIdx = activeCatIndex + 1
+        setActiveCatIndex(nextIdx)
         setActiveQIndex(0)
-        showToastNotice(`Completed ${currentCategory.short}. Advancing to ${ASSESSMENT_SECTIONS[activeCatIndex + 1].short}…`)
+        onSelectCategory?.(ASSESSMENT_SECTIONS[nextIdx].key)
+        showToast(`Moved to ${ASSESSMENT_SECTIONS[nextIdx].short}`)
+      } else {
+        showToast('All 7 Evaluation Categories finished!')
       }
     }
   }
 
-  // Move to previous question
   const movePrev = () => {
     if (activeQIndex > 0) {
       setActiveQIndex((prev) => prev - 1)
     } else if (activeCatIndex > 0) {
-      const prevCat = ASSESSMENT_SECTIONS[activeCatIndex - 1]
-      setActiveCatIndex(activeCatIndex - 1)
-      setActiveQIndex(Math.max(0, (prevCat.questions?.length || 1) - 1))
+      const prevCatIdx = activeCatIndex - 1
+      setActiveCatIndex(prevCatIdx)
+      const prevQuestions = ASSESSMENT_SECTIONS[prevCatIdx].questions || []
+      setActiveQIndex(Math.max(0, prevQuestions.length - 1))
+      onSelectCategory?.(ASSESSMENT_SECTIONS[prevCatIdx].key)
     }
   }
 
-  // Jump to specific category and question
-  const jumpToQuestion = (catIndex, qIndex = 0) => {
-    setActiveCatIndex(catIndex)
-    setActiveQIndex(qIndex)
-    setShowCategoryReview(false)
-  }
-
-  const showToastNotice = (msg) => {
-    setNotice(msg)
-    setTimeout(() => setNotice(null), 3000)
-  }
-
-  // Trigger final submission
   const handleFinalReport = async () => {
     setIsSubmitting(true)
     try {
@@ -166,526 +268,249 @@ export default function ChatbotAssessment({
     }
   }
 
+  const isCurrentAnswered = currentQuestion?.fields?.some(
+    (f) => answers[f.key] !== undefined && answers[f.key] !== '' && answers[f.key] !== null
+  )
+
   return (
-    <div className="relative mx-auto max-w-5xl">
+    <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-[#0d111c] text-slate-900 dark:text-slate-100 font-body relative overflow-hidden transition-colors">
       {/* ============================================================ */}
-      {/* TOP CONTROLS & DEMO / OCR ACTIONS                           */}
+      {/* 1. TOP HEADER (Mobile-First Responsive Layout)               */}
       {/* ============================================================ */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
-        <div className="flex items-center gap-2.5 text-xs text-slate-300">
-          <span className="flex h-2 w-2 rounded-full bg-bio-400" />
-          <span>
-            {currentUser?.email ? (
-              <>
-                Authenticated as <strong className="text-white">{currentUser.email}</strong> · Database Connected
-              </>
-            ) : (
-              'Clinical Diagnostic Intake Session'
+      <header className="h-12 sm:h-14 shrink-0 border-b border-rose-100/90 dark:border-white/10 bg-white/95 dark:bg-[#121826]/95 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 z-30 shadow-sm">
+        <div className="flex items-center gap-2 sm:gap-3 truncate">
+          {/* Model Badge */}
+          <div className="flex items-center gap-1.5 rounded-lg sm:rounded-xl border border-rose-200/80 bg-rose-50/60 dark:border-white/10 dark:bg-white/5 px-2 sm:px-3 py-1 sm:py-1.5 shrink-0">
+            <span className="flex h-2 w-2 rounded-full bg-rose-500 dark:bg-bio-400 animate-pulse" />
+            <span className="font-display text-xs font-bold text-slate-900 dark:text-white tracking-wide sm:hidden">
+              Chatbot
+            </span>
+            <span className="font-display text-xs font-bold text-slate-900 dark:text-white tracking-wide hidden sm:inline">
+              PCOS Chatbot Assistant
+            </span>
+          </div>
+
+          {/* Category Dropdown Pill */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowCategoryMenu(!showCategoryMenu)}
+              className="flex items-center gap-1 rounded-lg border border-rose-200/80 bg-white hover:bg-rose-50/50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 px-2 py-1 text-xs text-slate-700 dark:text-slate-200 font-semibold max-w-[130px] sm:max-w-none truncate shadow-xs"
+            >
+              <span className="truncate">{currentCategory.short}</span>
+              <span className="text-[10px] text-rose-600 dark:text-bio-300 font-mono shrink-0">
+                {activeQIndex + 1}/{currentQuestions.length}
+              </span>
+              <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Category Dropdown Modal / Bottom-sheet */}
+            {showCategoryMenu && (
+              <div className="fixed inset-x-3 top-14 sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:mt-1.5 w-auto sm:w-64 max-h-[75vh] overflow-y-auto rounded-2xl border border-rose-200 bg-white p-2.5 shadow-2xl backdrop-blur-2xl z-50 dark:border-white/20 dark:bg-slate-900/98">
+                <div className="flex items-center justify-between px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-rose-100 dark:border-white/10 mb-1">
+                  <span>Switch Category</span>
+                  <button onClick={() => setShowCategoryMenu(false)} className="text-slate-400 hover:text-slate-800 dark:hover:text-white sm:hidden">✕</button>
+                </div>
+                {ASSESSMENT_SECTIONS.map((sec, idx) => (
+                  <button
+                    key={sec.key}
+                    type="button"
+                    onClick={() => {
+                      setActiveCatIndex(idx)
+                      setActiveQIndex(0)
+                      onSelectCategory?.(sec.key)
+                      setShowCategoryMenu(false)
+                    }}
+                    className={`w-full flex items-center justify-between rounded-xl px-2.5 py-2 text-left text-xs ${
+                      idx === activeCatIndex
+                        ? 'bg-rose-50 text-rose-600 font-bold border border-rose-200 dark:bg-bio-500/20 dark:text-bio-300 dark:border-bio-400/30'
+                        : 'text-slate-700 hover:bg-rose-50/50 dark:text-slate-300 dark:hover:bg-white/5'
+                    }`}
+                  >
+                    <span>0{sec.number} {sec.short}</span>
+                    <span className="text-[10px] text-slate-400 font-mono">{sec.questions?.length} Qs</span>
+                  </button>
+                ))}
+              </div>
             )}
-          </span>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {demoProfile && (
-            <span className="rounded-full border border-bio-400/30 bg-bio-500/10 px-3 py-1 text-xs text-bio-200">
-              Profile: {demoProfile === 'pcos' ? 'PCOS Clinical Case' : 'Healthy Control Case'}
-            </span>
-          )}
+        {/* Right Action Buttons */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+
           <button
             type="button"
-            onClick={() => onLoadDemo('pcos')}
-            className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-bio-200 border border-white/10"
-            title="Pre-fills clinical questions with a PCOS positive profile"
+            onClick={() => {
+              onSaveCategory?.(currentCategory.key)
+              showToast(`Saved ${currentCategory.short} Axis`)
+            }}
+            className="btn-ghost !px-2.5 !py-1 text-xs"
           >
-            Load PCOS Profile
+            Save
           </button>
+
           <button
             type="button"
-            onClick={() => onLoadDemo('healthy')}
-            className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-bio-200 border border-white/10"
-            title="Pre-fills all questions with standard healthy values"
+            onClick={handleFinalReport}
+            disabled={isSubmitting}
+            className="btn-primary !px-3 !py-1 text-xs font-bold shadow-sm"
           >
-            Load Healthy Profile
+            {isSubmitting ? 'Evaluating…' : 'Report'}
           </button>
-          <label className="btn-ghost !px-3 !py-1.5 text-xs text-bio-300 hover:text-white cursor-pointer border border-bio-400/30">
-            Upload Lab Report (OCR)
-            <input
-              type="file"
-              accept=".pdf,.png,.jpg,.jpeg"
-              onChange={onFileUpload}
-              className="hidden"
-            />
-          </label>
         </div>
-      </div>
+      </header>
 
       {/* OCR Status Banners */}
       {uploadStatus && (
-        <div className="mb-6 rounded-xl border border-bio-400/40 bg-bio-500/10 px-4 py-3 text-xs text-bio-200 flex items-center justify-between">
-          <span>{uploadStatus}</span>
-          <button onClick={() => setUploadStatus(null)} className="text-slate-400 hover:text-white font-semibold ml-3">Dismiss</button>
+        <div className="bg-rose-50 border-b border-rose-200 px-3 py-1.5 text-xs text-rose-700 flex items-center justify-between z-20 dark:bg-bio-500/15 dark:border-bio-400/30 dark:text-bio-200">
+          <span className="truncate pr-2">{uploadStatus}</span>
+          <button onClick={() => setUploadStatus(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold shrink-0">✕</button>
         </div>
       )}
       {uploadError && (
-        <div className="mb-6 rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-xs text-rose-300 flex items-center justify-between">
-          <span>{uploadError}</span>
-          <button onClick={() => setUploadError(null)} className="text-slate-400 hover:text-white font-semibold ml-3">Dismiss</button>
+        <div className="bg-rose-500/15 border-b border-rose-400/30 px-3 py-1.5 text-xs text-rose-600 dark:text-rose-300 flex items-center justify-between z-20">
+          <span className="truncate pr-2">{uploadError}</span>
+          <button onClick={() => setUploadError(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-white font-bold shrink-0">✕</button>
         </div>
       )}
 
-      {/* ============================================================ */}
-      {/* CATEGORY SELECTOR CAROUSEL PILLS (Jump & Edit any Category) */}
-      {/* ============================================================ */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-2.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            Evaluation Axes:
-          </span>
-          <button
-            type="button"
-            onClick={() => setShowCategoryReview(!showCategoryReview)}
-            className="text-xs font-medium text-bio-300 hover:text-white"
-          >
-            {showCategoryReview ? 'Hide Question Index' : 'Question Index & Review'}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-          {ASSESSMENT_SECTIONS.map((sec, idx) => {
-            const stats = getCategoryStats(sec)
-            const isActive = idx === activeCatIndex
-
-            return (
-              <button
-                type="button"
-                key={sec.key}
-                onClick={() => jumpToQuestion(idx, 0)}
-                className={`relative flex flex-col justify-between rounded-xl p-3 text-left transition-all ${
-                  isActive
-                    ? 'border-2 border-bio-400 bg-bio-500/20 shadow-lg shadow-bio-500/20'
-                    : 'border border-white/10 bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-1 mb-2">
-                  <span className="font-mono text-xs font-bold text-bio-300">0{sec.number}</span>
-                  <span
-                    className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      stats.isComplete
-                        ? 'border border-bio-400/40 bg-bio-500/20 text-bio-300'
-                        : stats.filled > 0
-                        ? 'border border-amber-400/40 bg-amber-500/20 text-amber-200'
-                        : 'border border-white/10 bg-white/5 text-slate-400'
-                    }`}
-                  >
-                    {stats.filled}/{stats.total}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[10px] font-semibold text-slate-400">Step {sec.number}</p>
-                  <p className="text-xs font-bold text-slate-100 truncate">{sec.short}</p>
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Collapsible Category Questions Review Drawer */}
+      {/* Toast Notice */}
       <AnimatePresence>
-        {showCategoryReview && (
+        {toastNotice && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mb-6 overflow-hidden rounded-2xl border border-bio-400/30 bg-slate-950/90 p-5 backdrop-blur-xl"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="fixed top-14 inset-x-3 sm:inset-x-auto sm:right-4 z-50 rounded-xl border border-rose-200 bg-white/95 px-3.5 py-2 text-xs font-bold text-rose-700 shadow-xl text-center backdrop-blur-md dark:border-bio-400/40 dark:bg-slate-900/98 dark:text-bio-200"
           >
-            <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-sm font-bold text-bio-300">0{currentCategory.number}</span>
-                <div>
-                  <h3 className="font-display text-sm font-bold text-white">
-                    {currentCategory.title} · Question Directory
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Select any question below to inspect or modify stored clinical values.
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowCategoryReview(false)}
-                className="text-slate-400 hover:text-white text-xs font-bold px-2 py-1"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="grid gap-2 max-h-72 overflow-y-auto pr-1">
-              {currentQuestions.map((q, qIdx) => {
-                const isSelected = qIdx === activeQIndex
-                const qAnswered = q.fields?.some(
-                  (f) => answers[f.key] !== undefined && answers[f.key] !== '' && answers[f.key] !== null
-                )
-
-                // Summarize answers for this question
-                const answeredValues = q.fields
-                  ?.map((f) => {
-                    const val = answers[f.key]
-                    if (val === undefined || val === '' || val === null) return null
-                    return `${f.label}: ${val}${f.unit ? ' ' + f.unit : ''}`
-                  })
-                  .filter(Boolean)
-                  .join(' · ')
-
-                return (
-                  <button
-                    type="button"
-                    key={q.id || qIdx}
-                    onClick={() => jumpToQuestion(activeCatIndex, qIdx)}
-                    className={`flex items-start justify-between rounded-xl p-3 text-left transition-all ${
-                      isSelected
-                        ? 'border border-bio-400 bg-bio-500/20 text-white'
-                        : 'border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] text-slate-300'
-                    }`}
-                  >
-                    <div className="pr-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-[11px] text-bio-300 font-bold">
-                          Item {qIdx + 1}
-                        </span>
-                        <span className="text-xs font-medium text-slate-200">
-                          {q.label || q.text}
-                        </span>
-                      </div>
-                      {answeredValues && (
-                        <p className="text-[11px] text-bio-200 font-mono">
-                          {answeredValues}
-                        </p>
-                      )}
-                    </div>
-                    <span
-                      className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        qAnswered
-                          ? 'border border-bio-400/40 bg-bio-500/20 text-bio-300'
-                          : 'border border-white/10 bg-white/5 text-slate-500'
-                      }`}
-                    >
-                      {qAnswered ? 'Recorded' : 'Pending'}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
+            {toastNotice}
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* ============================================================ */}
-      {/* MAIN CONSULTATION CONTAINER                                  */}
+      {/* 2. CHAT AREA (Question Card & Options Down Below)            */}
       {/* ============================================================ */}
-      <div className="rounded-3xl border border-white/10 bg-slate-950/80 backdrop-blur-2xl shadow-2xl overflow-hidden flex flex-col">
-        {/* Top Header Bar */}
-        <div className="flex items-center justify-between border-b border-white/10 bg-slate-900/80 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-bio-500/20 text-bio-300 border border-bio-400/30 font-mono text-sm font-bold">
-              Dx
+      <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-8 flex flex-col items-center">
+        <div className="w-full max-w-2xl space-y-4 sm:space-y-6">
+          {/* Conversation Stream (Mini-ChatGPT Messages) */}
+          <div className="space-y-3 pb-2">
+            {chatMessages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.18 }}
+                className={`flex gap-2.5 sm:gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {msg.sender === 'assistant' && (
+                  <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-rose-100 text-[#E11D48] border border-rose-200 mt-0.5 text-xs font-bold font-mono shadow-2xs">
+                    Dx
+                  </div>
+                )}
+                <div
+                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed ${
+                    msg.sender === 'user'
+                      ? 'bg-[#E11D48] text-white rounded-tr-xs shadow-sm font-medium'
+                      : 'bg-white border border-slate-200 text-slate-800 shadow-xs rounded-tl-xs whitespace-pre-line'
+                  }`}
+                >
+                  <p>{msg.text}</p>
+                  <span className={`block text-[10px] mt-1 text-right ${msg.sender === 'user' ? 'text-rose-200' : 'text-slate-400'}`}>
+                    {msg.time}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Question Message Box (Active Question Card) */}
+          <div className="flex items-start gap-2.5 sm:gap-3.5 rounded-2xl border border-rose-100 bg-white p-4 sm:p-5 shadow-xs">
+            {/* ChatGPT Bot Avatar */}
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600 border border-rose-200 shadow-sm mt-0.5 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              </svg>
             </div>
-            <div>
+
+            {/* Question Text */}
+            <div className="flex-1 space-y-2 min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="font-display text-sm font-bold text-white">
-                  Clinical Consultation Portal
-                </h2>
-                <span className="rounded-full border border-bio-400/40 bg-bio-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-bio-300">
-                  Step {activeCatIndex + 1} of 7 · {currentCategory.short}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">
-                Protocol: <strong className="text-slate-200">{currentCategory.title}</strong>
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onSwitchToForm}
-              className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-white border border-white/10"
-              title="Switch to standard category form view"
-            >
-              Form View
-            </button>
-            <button
-              type="button"
-              onClick={() => onSaveCategory?.(currentCategory.key)}
-              className="btn-ghost !px-3 !py-1.5 text-xs text-bio-300 hover:text-white border border-bio-400/30"
-              title="Save current category answers to Supabase"
-            >
-              Save Axis
-            </button>
-          </div>
-        </div>
-
-        {/* Category Context & Progress Header */}
-        <div className="border-b border-white/5 bg-slate-900/40 px-6 py-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs">
-            <div className="flex items-center gap-2 text-slate-300">
-              <span className="font-mono text-bio-300 font-bold">0{currentCategory.number}</span>
-              <span className="font-semibold text-white">{currentCategory.short}:</span>
-              <span className="text-slate-400 hidden md:inline truncate max-w-md">
-                {currentCategory.desc}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="font-mono text-bio-300 font-semibold">
-                Question {activeQIndex + 1} of {currentQuestions.length}
-              </span>
-              <span className="text-slate-600">·</span>
-              <span className="text-slate-400 font-mono text-[11px]">
-                {overallProgress?.filled || 0} / 79 Total Parameters ({overallProgress?.percentage || 0}%)
-              </span>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full bg-gradient-to-r from-bio-400 to-plasma-400 transition-all duration-300"
-              style={{
-                width: `${Math.max(
-                  5,
-                  Math.round(((activeQIndex + 1) / currentQuestions.length) * 100)
-                )}%`,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* ============================================================ */}
-        {/* MESSAGES STREAM AREA                                         */}
-        {/* ============================================================ */}
-        <div className="flex-1 p-6 space-y-6 max-h-[520px] overflow-y-auto">
-          {/* Clinical Introduction Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-start gap-3"
-          >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-bio-500/20 text-bio-300 border border-bio-400/30 font-mono text-xs font-bold">
-              Rx
-            </div>
-            <div className="max-w-2xl rounded-2xl rounded-tl-none border border-white/10 bg-slate-900/90 p-4 shadow-xl text-xs sm:text-sm text-slate-200 space-y-2">
-              <p className="font-semibold text-white">
-                Clinical PCOS Phenotype Intake Protocol
-              </p>
-              <p className="text-slate-300 leading-relaxed">
-                This intake assesses diagnostic criteria according to Rotterdam consensus guidelines and endocrine evaluation thresholds. Recorded data is cross-referenced with metabolic, hormonal, and adrenal biomarker rules.
-              </p>
-              <div className="pt-1 text-[11px] text-slate-400 flex items-center gap-2 border-t border-white/5 mt-2">
-                <span className="text-bio-300 font-semibold">Note:</span>
-                <span>You can review, modify, or jump between categories at any point.</span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Previous Questions Summary in Active Category (If answered) */}
-          {activeQIndex > 0 && (
-            <div className="space-y-2.5 pl-11">
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                Recorded in {currentCategory.short}:
-              </p>
-              {currentQuestions.slice(0, activeQIndex).map((prevQ, pIdx) => {
-                const values = prevQ.fields
-                  ?.map((f) => {
-                    const v = answers[f.key]
-                    if (v === undefined || v === '' || v === null) return null
-                    return `${f.label}: ${v}${f.unit ? ' ' + f.unit : ''}`
-                  })
-                  .filter(Boolean)
-                  .join(' · ')
-
-                if (!values) return null
-
-                return (
-                  <motion.div
-                    key={prevQ.id || pIdx}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2 text-xs"
-                  >
-                    <div className="truncate mr-3">
-                      <span className="font-mono text-slate-500 mr-2">Item {pIdx + 1}</span>
-                      <span className="text-slate-300">{prevQ.label || prevQ.text}: </span>
-                      <strong className="text-bio-200 font-medium">{values}</strong>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveQIndex(pIdx)}
-                      className="shrink-0 text-[11px] text-bio-300 hover:text-white font-medium"
-                    >
-                      Edit Response
-                    </button>
-                  </motion.div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Current Question Bubble */}
-          <motion.div
-            key={`${currentCategory.key}-${currentQuestion?.id || activeQIndex}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-            className="flex items-start gap-3"
-          >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-bio-500/20 text-bio-300 border border-bio-400/30 font-mono text-xs font-bold">
-              Rx
-            </div>
-            <div className="max-w-2xl rounded-2xl rounded-tl-none border border-bio-400/40 bg-slate-900/95 p-5 shadow-2xl text-slate-100 space-y-3">
-              <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
-                <span className="font-mono text-xs font-bold text-bio-300">
-                  Question {activeQIndex + 1} of {currentQuestions.length} · {currentCategory.short}
+                <span className="font-bold text-xs text-slate-900 dark:text-white">PCOS Clinical Assistant</span>
+                <span className="text-[10px] text-rose-600 dark:text-bio-300 font-mono font-semibold">
+                  Q{activeQIndex + 1} of {currentQuestions.length}
                 </span>
                 {currentQuestion?.category && (
-                  <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] text-slate-400">
+                  <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-white/5 dark:text-slate-400 px-2 py-0.5 rounded-md hidden sm:inline font-medium">
                     {currentQuestion.category}
                   </span>
                 )}
               </div>
 
-              <h3 className="font-display text-base sm:text-lg font-bold text-white leading-snug">
+              {/* Main Question Label */}
+              <h2 className="font-display text-base sm:text-xl font-bold text-slate-900 dark:text-white leading-snug">
                 {currentQuestion?.label || currentQuestion?.text}
-              </h3>
+              </h2>
 
+              {/* Description Context (if any) */}
               {currentQuestion?.description && (
-                <p className="text-xs text-slate-300 bg-white/5 p-2.5 rounded-xl leading-relaxed">
+                <p className="text-xs text-slate-600 bg-rose-50/60 dark:bg-white/5 dark:text-slate-300 p-2.5 sm:p-3 rounded-xl leading-relaxed border-l-2 border-rose-500 dark:border-bio-400">
                   {currentQuestion.description}
                 </p>
               )}
 
+              {/* Reference threshold */}
               {currentQuestion?.reference && (
-                <p className="text-[10px] text-slate-500 font-mono">
-                  Clinical Source: {currentQuestion.reference}
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                  Reference range: <span className="text-slate-800 dark:text-slate-200 font-medium">{currentQuestion.reference}</span>
                 </p>
               )}
 
-              {/* Shared field note if carried over */}
-              {currentQuestion?.shared_field && (
-                <div className="rounded-lg border border-bio-400/20 bg-bio-500/5 px-3 py-1.5 text-xs text-bio-300">
-                  Cross-referenced parameter: Shared with another phenotype axis and synchronized automatically.
+              {/* Live BMI if metabolic */}
+              {calculatedBmi && currentCategory.key === 'metabolic' && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-2 sm:p-2.5 text-xs flex items-center justify-between dark:border-bio-400/30 dark:bg-bio-500/10">
+                  <span className="text-slate-700 dark:text-slate-300">Live BMI: <strong className="text-rose-600 dark:text-bio-300">{calculatedBmi.bmi} kg/m²</strong></span>
+                  <span className="text-rose-700 dark:text-bio-200 text-[10px] font-bold uppercase">{calculatedBmi.category}</span>
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
 
-          {/* Live BMI Analysis (If height & weight answered) */}
-          {calculatedBmi && currentCategory.key === 'metabolic' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex items-start gap-3"
-            >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-plasma-500/20 text-plasma-300 border border-plasma-400/30 font-mono text-xs font-bold">
-                BMI
-              </div>
-              <div className="rounded-2xl rounded-tl-none border border-plasma-400/30 bg-slate-900/90 p-4 text-xs sm:text-sm text-slate-200">
-                <p className="font-semibold text-white mb-1">
-                  Body Mass Index (BMI) Computed:
-                </p>
-                <div className="flex items-center gap-3">
-                  <span className="font-display text-xl font-bold text-bio-300">
-                    {calculatedBmi.bmi} kg/m²
-                  </span>
-                  <span className="rounded-full border border-bio-400/40 bg-bio-500/20 px-2.5 py-0.5 text-xs font-semibold text-bio-200">
-                    {calculatedBmi.category}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Evaluated in metabolic phenotype scoring for insulin resistance risk.
-                </p>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Previous Answer Bubble (If already answered) */}
-          {isCurrentQuestionAnswered && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex justify-end items-start gap-2.5"
-            >
-              <div className="max-w-md rounded-2xl rounded-tr-none border border-bio-400/40 bg-bio-500/10 p-4 shadow-xl text-right">
-                <p className="text-[11px] font-semibold text-bio-300 mb-1">Recorded Answer:</p>
-                <div className="space-y-1">
-                  {currentQuestion?.fields?.map((f) => {
-                    const v = answers[f.key]
-                    if (v === undefined || v === '' || v === null) return null
-                    return (
-                      <p key={f.key} className="text-sm font-bold text-white">
-                        <span className="text-slate-300 font-normal">{f.label}: </span>
-                        {String(v)} {f.unit || ''}
-                      </p>
-                    )
-                  })}
-                </div>
-                <div className="mt-2 flex items-center justify-end gap-2 text-[11px]">
-                  <span className="text-bio-300 font-medium">Synchronized</span>
-                </div>
-              </div>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-bio-400 text-slate-950 font-bold text-xs">
-                Pt
-              </div>
-            </motion.div>
-          )}
-
-          <div ref={chatEndRef} />
-        </div>
-
-        {/* ============================================================ */}
-        {/* INTERACTIVE INPUT CONTROL AREA (Specific to Question Type)  */}
-        {/* ============================================================ */}
-        <div
-          ref={inputCardRef}
-          className="border-t border-white/10 bg-slate-900/90 p-5 sm:p-6 backdrop-blur-xl"
-        >
-          {notice && (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4 rounded-xl border border-bio-400/40 bg-bio-500/20 px-3.5 py-1.5 text-xs text-bio-200 flex items-center justify-between"
-            >
-              <span>{notice}</span>
-              <span className="text-[10px] font-mono text-bio-300">Synchronized</span>
-            </motion.div>
-          )}
-
-          {/* Render inputs based on fields */}
-          <div className="space-y-4">
+          {/* ============================================================ */}
+          {/* DOWN TEXT OPTIONS / INPUTS (Zero indent on mobile)          */}
+          {/* ============================================================ */}
+          <div className="pl-0 sm:pl-11 space-y-3 sm:space-y-4 w-full">
             {currentQuestion?.fields?.map((field) => {
               const currentVal = answers[field.key]
 
-              // 1. YES / NO QUESTION
+              // 1. YES / NO (Large thumb-friendly touch targets)
               if (field.type === 'yesno') {
                 return (
-                  <div key={field.key} className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-300">
-                      {field.label}:
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div key={field.key} className="space-y-1.5 sm:space-y-2 w-full">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 block font-semibold">Select an option:</span>
+                    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full">
                       {['yes', 'no'].map((opt) => {
                         const isSelected = currentVal === opt
                         return (
                           <button
                             type="button"
                             key={opt}
-                            onClick={() => handleSingleAnswer(field.key, opt)}
-                            className={`flex items-center justify-center gap-2 rounded-xl border py-3 px-4 font-display text-sm font-bold capitalize transition-all ${
+                            onClick={() => handleSelectOption(field.key, opt)}
+                            className={`flex items-center justify-center gap-2 rounded-xl min-h-[48px] sm:min-h-[52px] py-3 px-3 font-display text-sm sm:text-base font-bold capitalize transition-all active:scale-[0.98] ${
                               isSelected
-                                ? 'border-bio-400 bg-bio-400 text-slate-950 shadow-lg shadow-bio-500/30'
-                                : 'border-white/10 bg-white/5 text-slate-200 hover:border-bio-400/50 hover:bg-white/10'
+                                ? 'border-2 border-rose-500 bg-rose-50 text-rose-700 ring-2 ring-rose-200 shadow-sm dark:border-bio-400 dark:bg-bio-400/25 dark:text-bio-300 dark:ring-bio-400/30'
+                                : 'border border-slate-200 bg-white text-slate-700 hover:border-rose-300 hover:bg-rose-50/40 shadow-xs dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:border-bio-400/50 dark:hover:bg-white/10'
                             }`}
                           >
                             <span>{opt === 'yes' ? 'Yes' : 'No'}</span>
+                            {isSelected && (
+                              <span className="flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-rose-500 text-white dark:bg-bio-400 dark:text-slate-950 text-[10px] sm:text-xs font-bold">
+                                ✓
+                              </span>
+                            )}
                           </button>
                         )
                       })}
@@ -694,28 +519,31 @@ export default function ChatbotAssessment({
                 )
               }
 
-              // 2. SELECT QUESTION (Option Chips)
+              // 2. SELECT OPTIONS (Multiple choices)
               if (field.type === 'select') {
                 return (
-                  <div key={field.key} className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-300">
-                      Select response: <span className="text-white">{field.label}</span>
-                    </label>
-                    <div className="flex flex-wrap gap-2">
+                  <div key={field.key} className="space-y-1.5 sm:space-y-2 w-full">
+                    <span className="text-xs text-slate-500 dark:text-slate-400 block font-semibold">Choose an option:</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
                       {field.options?.map((opt) => {
                         const isSelected = currentVal === opt
                         return (
                           <button
                             type="button"
                             key={opt}
-                            onClick={() => handleSingleAnswer(field.key, opt)}
-                            className={`rounded-xl border px-4 py-2.5 text-xs sm:text-sm font-medium transition-all ${
+                            onClick={() => handleSelectOption(field.key, opt)}
+                            className={`flex items-center justify-between rounded-xl border min-h-[46px] p-3 text-left text-xs sm:text-sm font-semibold transition-all active:scale-[0.98] ${
                               isSelected
-                                ? 'border-bio-400 bg-bio-400 text-slate-950 font-bold shadow-lg shadow-bio-500/25'
-                                : 'border-white/10 bg-white/5 text-slate-200 hover:border-bio-400/40 hover:bg-white/10'
+                                ? 'border-2 border-rose-500 bg-rose-50 text-rose-700 ring-2 ring-rose-200 font-bold shadow-sm dark:border-bio-400 dark:bg-bio-400/20 dark:text-bio-300 dark:ring-bio-400/30'
+                                : 'border border-slate-200 bg-white text-slate-700 hover:border-rose-300 hover:bg-rose-50/40 shadow-xs dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:border-bio-400/50 dark:hover:bg-white/10'
                             }`}
                           >
-                            {opt}
+                            <span className="pr-2">{opt}</span>
+                            {isSelected && (
+                              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white dark:bg-bio-400 dark:text-slate-950 text-[10px] font-bold">
+                                ✓
+                              </span>
+                            )}
                           </button>
                         )
                       })}
@@ -724,7 +552,7 @@ export default function ChatbotAssessment({
                 )
               }
 
-              // 3. SCALE QUESTION (0 to 4 rating tiles, e.g. PSS-10 stress or symptom scale)
+              // 3. SCALE 0 TO 4 (Optimized 5-column touch grid on mobile)
               if (field.type === 'scale') {
                 const min = field.min ?? 0
                 const max = field.max ?? 4
@@ -734,19 +562,17 @@ export default function ChatbotAssessment({
                 }
 
                 return (
-                  <div key={field.key} className="space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-semibold text-slate-300">
-                        {field.label}:
-                      </label>
+                  <div key={field.key} className="space-y-1.5 sm:space-y-2 w-full">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 dark:text-slate-400 font-semibold">Select rating:</span>
                       {currentVal !== undefined && field.labels?.[currentVal] && (
-                        <span className="font-mono text-xs text-bio-300 font-bold">
-                          Selected: {currentVal} ({field.labels[currentVal]})
+                        <span className="text-rose-600 dark:text-bio-300 font-bold font-mono">
+                          {currentVal} · {field.labels[currentVal]}
                         </span>
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    <div className="grid grid-cols-5 gap-1.5 sm:gap-2 w-full">
                       {options.map((score) => {
                         const isSelected = currentVal === score
                         const labelText = field.labels?.[score] || score
@@ -755,15 +581,15 @@ export default function ChatbotAssessment({
                           <button
                             type="button"
                             key={score}
-                            onClick={() => handleSingleAnswer(field.key, score)}
-                            className={`flex flex-col items-center justify-center rounded-xl border p-2.5 text-center transition-all ${
+                            onClick={() => handleSelectOption(field.key, score)}
+                            className={`flex flex-col items-center justify-center rounded-xl border min-h-[50px] p-1.5 sm:p-2 text-center transition-all active:scale-[0.98] ${
                               isSelected
-                                ? 'border-bio-400 bg-bio-400 text-slate-950 font-bold shadow-lg shadow-bio-500/25'
-                                : 'border-white/10 bg-white/5 text-slate-200 hover:border-bio-400/40 hover:bg-white/10'
+                                ? 'border-2 border-rose-500 bg-rose-50 text-rose-700 ring-2 ring-rose-200 font-bold shadow-sm dark:border-bio-400 dark:bg-bio-400/25 dark:text-bio-300 dark:ring-bio-400/30'
+                                : 'border border-slate-200 bg-white text-slate-700 hover:border-rose-300 hover:bg-rose-50/40 shadow-xs dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:border-bio-400/50 dark:hover:bg-white/10'
                             }`}
                           >
-                            <span className="font-mono text-base font-bold">{score}</span>
-                            <span className="text-[10px] opacity-80 leading-tight mt-0.5">
+                            <span className="font-mono text-sm sm:text-base font-bold">{score}</span>
+                            <span className="text-[9px] sm:text-[10px] opacity-80 leading-tight mt-0.5 truncate max-w-full">
                               {labelText}
                             </span>
                           </button>
@@ -774,147 +600,222 @@ export default function ChatbotAssessment({
                 )
               }
 
-              // 4. NUMBER QUESTION (Biomarker, Lab test, or measurements)
+              // 4. NUMBER INPUT (16px text-base to prevent mobile browser zoom)
               if (field.type === 'number') {
                 return (
-                  <div key={field.key} className="space-y-1.5">
+                  <div key={field.key} className="space-y-1.5 w-full max-w-md">
                     <div className="flex items-center justify-between text-xs">
-                      <label className="font-semibold text-slate-300">
-                        {field.label} {field.unit && <span className="text-bio-300 font-mono">({field.unit})</span>}
+                      <label className="text-slate-700 dark:text-slate-300 font-semibold truncate pr-2">
+                        {field.label} {field.unit && <span className="text-rose-600 dark:text-bio-300 font-mono">({field.unit})</span>}
                       </label>
                       {(field.min !== undefined || field.max !== undefined) && (
-                        <span className="text-[10px] text-slate-500 font-mono">
-                          Range: {field.min ?? '—'} to {field.max ?? '—'} {field.unit}
+                        <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                          {field.min ?? '—'} to {field.max ?? '—'}
                         </span>
                       )}
                     </div>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step={field.step ?? 'any'}
-                        min={field.min}
-                        max={field.max}
-                        placeholder={field.unit ? `e.g. 70 ${field.unit}` : 'Enter numeric value…'}
-                        value={numInputs[field.key] ?? ''}
-                        onChange={(e) =>
-                          setNumInputs((prev) => ({ ...prev, [field.key]: e.target.value }))
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault()
-                            handleSubmitNumberFields()
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          step={field.step ?? 'any'}
+                          min={field.min}
+                          max={field.max}
+                          placeholder={field.unit ? `Enter ${field.unit}…` : 'Enter value…'}
+                          value={numInputs[field.key] ?? ''}
+                          onChange={(e) =>
+                            setNumInputs((prev) => ({ ...prev, [field.key]: e.target.value }))
                           }
-                        }}
-                        className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-bio-400 focus:bg-white/10 focus:outline-none transition-all"
-                      />
-                      {field.unit && (
-                        <span className="absolute right-3.5 top-3 text-xs font-mono text-slate-400 pointer-events-none">
-                          {field.unit}
-                        </span>
-                      )}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              handleSaveNumbers()
+                            }
+                          }}
+                          className="w-full rounded-xl border border-rose-200 bg-white px-3.5 py-2.5 text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200 focus:outline-none transition-all font-mono min-h-[46px] shadow-xs dark:border-white/15 dark:bg-white/5 dark:text-white dark:placeholder-slate-500 dark:focus:border-bio-400 dark:focus:ring-0"
+                        />
+                        {field.unit && (
+                          <span className="absolute right-3 top-3 text-xs font-mono text-slate-400 pointer-events-none">
+                            {field.unit}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSaveNumbers}
+                        className="px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-bold shrink-0 min-h-[46px] active:scale-95 dark:border-bio-400/40 dark:bg-bio-500/20 dark:text-bio-300"
+                      >
+                        Save
+                      </button>
                     </div>
                   </div>
                 )
               }
 
-              // Fallback text input
+              // 5. TEXT INPUT
               return (
-                <div key={field.key} className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">{field.label}:</label>
+                <div key={field.key} className="space-y-1.5 w-full max-w-md">
+                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium">{field.label}:</label>
                   <input
                     type="text"
                     value={answers[field.key] ?? ''}
                     onChange={(e) => onAnswerChange(field.key, e.target.value)}
-                    className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-rose-200 bg-white px-3.5 py-2.5 text-base sm:text-sm text-slate-900 focus:border-rose-500 focus:outline-none min-h-[46px] shadow-xs dark:border-white/15 dark:bg-white/5 dark:text-white"
                   />
                 </div>
               )
             })}
-          </div>
 
-          {/* Action Row for Number Fields or Next / Back Navigation */}
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
-            <div className="flex items-center gap-2">
+            {/* Selected Value Indicator */}
+            {isCurrentAnswered && (
+              <div className="pt-1 text-xs text-rose-600 dark:text-bio-300 flex items-center gap-1.5 font-medium">
+                <span className="h-1.5 w-1.5 rounded-full bg-rose-500 dark:bg-bio-400 shrink-0" />
+                <span className="shrink-0">Recorded: </span>
+                <strong className="text-slate-800 dark:text-white truncate">
+                  {currentQuestion.fields
+                    .map((f) => {
+                      const v = answers[f.key]
+                      if (v === undefined || v === '' || v === null) return null
+                      return `${v === 'yes' ? 'Yes' : v === 'no' ? 'No' : v}${f.unit ? ' ' + f.unit : ''}`
+                    })
+                    .filter(Boolean)
+                    .join(' · ')}
+                </strong>
+              </div>
+            )}
+
+            {/* Navigation Buttons Right Under Options */}
+            <div className="pt-3 sm:pt-4 flex items-center justify-between gap-2.5 border-t border-rose-100 dark:border-white/10 w-full">
               <button
                 type="button"
                 onClick={movePrev}
                 disabled={activeCatIndex === 0 && activeQIndex === 0}
-                className="btn-ghost !px-3.5 !py-2 text-xs text-slate-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none"
+                className="btn-ghost !px-3.5 !py-2.5 text-xs font-semibold disabled:opacity-30 disabled:pointer-events-none min-h-[44px] shrink-0"
               >
-                ← Previous Question
+                Back
               </button>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              {/* If this question has number fields, provide explicit Save Number button */}
-              {currentQuestion?.fields?.some((f) => f.type === 'number') && (
-                <button
-                  type="button"
-                  onClick={handleSubmitNumberFields}
-                  className="btn-primary !px-5 !py-2 text-xs font-bold shadow-md shadow-bio-500/20"
-                >
-                  Save & Continue →
-                </button>
-              )}
-
-              {/* Skip / Next button */}
               <button
                 type="button"
                 onClick={advanceNext}
-                className="btn-ghost !px-3.5 !py-2 text-xs text-slate-300 hover:text-bio-200 border border-white/10"
+                className="btn-primary flex-1 sm:flex-none justify-center !px-5 sm:!px-6 !py-2.5 text-xs font-bold shadow-md min-h-[44px]"
               >
-                {activeQIndex < currentQuestions.length - 1
-                  ? 'Skip / Next Question →'
-                  : 'Complete Axis →'}
+                <span className="truncate">
+                  {activeQIndex < currentQuestions.length - 1
+                    ? 'Next Question'
+                    : activeCatIndex < ASSESSMENT_SECTIONS.length - 1
+                    ? `Next: ${ASSESSMENT_SECTIONS[activeCatIndex + 1].short}`
+                    : 'Finish All Questions'}
+                </span>
               </button>
             </div>
           </div>
+
+          <div ref={chatEndRef} />
         </div>
       </div>
 
       {/* ============================================================ */}
-      {/* FINAL ASSESSMENT SUBMISSION & DASHBOARD REPORT CARD          */}
+      {/* 3. STICKY BOTTOM PROMPT BAR (Thumb-Friendly on Mobile)        */}
       {/* ============================================================ */}
-      <div className="mt-8 rounded-3xl border border-bio-400/30 bg-gradient-to-br from-slate-900/90 via-slate-950/90 to-slate-900/90 p-6 sm:p-8 backdrop-blur-2xl shadow-2xl">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-bio-400/30 bg-bio-500/10 px-3 py-1 text-xs text-bio-200">
-              <span className="h-2 w-2 rounded-full bg-bio-400" />
-              <span>Rotterdam & Phenotype Protocol Ready</span>
+      {/* ============================================================ */}
+      {/* 3. STICKY BOTTOM PROMPT BAR (Mini-ChatGPT Input Form)        */}
+      {/* ============================================================ */}
+      <footer className="px-3 py-2 sm:p-4 bg-gradient-to-t from-slate-50 via-slate-50/95 to-transparent dark:from-[#0d111c] dark:via-[#0d111c]/95 shrink-0 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] z-20">
+        <div className="max-w-2xl mx-auto space-y-1.5 sm:space-y-2">
+          {/* Quick Yes/No suggestions above the prompt input */}
+          {currentQuestion?.fields?.length === 1 && currentQuestion.fields[0].type === 'yesno' && (
+            <div className="flex items-center gap-2 px-1">
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">Quick Answer:</span>
+              <button
+                type="button"
+                onClick={() => handleSelectOption(currentQuestion.fields[0].key, 'yes')}
+                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
+                  answers[currentQuestion.fields[0].key] === 'yes'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-bold dark:border-bio-400 dark:bg-bio-500/20 dark:text-bio-300'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-rose-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'
+                }`}
+              >
+                Yes
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectOption(currentQuestion.fields[0].key, 'no')}
+                className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all active:scale-95 ${
+                  answers[currentQuestion.fields[0].key] === 'no'
+                    ? 'border-rose-500 bg-rose-50 text-rose-700 font-bold dark:border-bio-400 dark:bg-bio-500/20 dark:text-bio-300'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-rose-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300'
+                }`}
+              >
+                No
+              </button>
             </div>
-            <h3 className="font-display text-xl sm:text-2xl font-bold text-white">
-              Generate Comprehensive PCOS Diagnostic Report
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Submit your recorded parameters to execute deterministic Rotterdam evaluation, override validation, and clinical nutrition matching.
-            </p>
-            <p className="text-xs text-slate-400">
-              Parameters Recorded: <strong className="text-bio-300">{overallProgress?.filled || 0} of 79</strong> biomarkers and symptoms evaluated.
-            </p>
-          </div>
+          )}
 
-          <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+          {/* Prompt Form with OCR Attachment + Message Input + Submit Button */}
+          <form
+            onSubmit={handleSendMessage}
+            className="flex items-center gap-2 rounded-xl sm:rounded-2xl border border-rose-200/90 bg-white p-1.5 sm:p-2 shadow-xl backdrop-blur-xl focus-within:border-rose-400 dark:border-white/10 dark:bg-[#151b2a] dark:focus-within:border-bio-400/50"
+          >
+            {/* Attachment for lab report */}
             <button
               type="button"
-              onClick={handleFinalReport}
-              disabled={isSubmitting}
-              className="w-full sm:w-auto btn-primary !bg-bio-400 !text-slate-950 !px-8 !py-3.5 text-sm font-extrabold hover:!bg-bio-300 shadow-2xl shadow-bio-500/40 flex items-center justify-center gap-2"
+              onClick={() => fileInputRef.current?.click()}
+              className="flex h-10 w-10 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl text-slate-500 hover:text-rose-600 active:bg-rose-50 transition-colors dark:text-slate-400 dark:hover:text-white dark:active:bg-white/10"
+              title="Upload lab report (OCR)"
             >
-              {isSubmitting ? (
-                <>
-                  <svg className="h-4 w-4 animate-spin text-current" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                  </svg>
-                  <span>Computing Diagnostic Classification…</span>
-                </>
-              ) : (
-                <span>Save & Generate Diagnostic Report →</span>
-              )}
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+              </svg>
             </button>
-          </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg"
+              onChange={onFileUpload}
+              className="hidden"
+            />
+
+            {/* Chat Input */}
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              placeholder="Ask or say 'change weight to 65kg', 'cycle: irregular'..."
+              className="flex-1 bg-transparent px-2.5 py-1.5 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none dark:text-white dark:placeholder-slate-500"
+            />
+
+            {/* Circular Send / Advance Button */}
+            {inputMessage.trim() ? (
+              <button
+                type="submit"
+                className="flex h-10 w-10 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-rose-500 text-white hover:bg-rose-600 font-bold transition-all shadow-md shadow-rose-500/25 active:scale-90 dark:bg-bio-400 dark:text-slate-950 dark:hover:bg-bio-300"
+                title="Send message"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={advanceNext}
+                className="flex h-10 w-10 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-rose-500 text-white hover:bg-rose-600 font-bold transition-all shadow-md shadow-rose-500/25 active:scale-90 dark:bg-bio-400 dark:text-slate-950 dark:hover:bg-bio-300"
+                title="Next Question"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+          </form>
+
+          <p className="text-center text-[9px] sm:text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+            Rotterdam Consensus Rule Engine v3.1 • Offline NLP Mini-ChatGPT
+          </p>
         </div>
-      </div>
+      </footer>
     </div>
   )
 }

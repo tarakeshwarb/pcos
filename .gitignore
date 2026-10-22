@@ -23,3 +23,6 @@ venv/
 # Operating System files
 .DS_Store
 Thumbs.db
+
+# Screenshots & temporary media
+/*.png

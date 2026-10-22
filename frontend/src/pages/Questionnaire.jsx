@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import GlassCard from '../components/GlassCard.jsx'
 import QuestionCard from '../components/QuestionCard.jsx'
 import ChatbotAssessment from '../components/ChatbotAssessment.jsx'
 import {
@@ -9,6 +8,7 @@ import {
   saveAssessmentCategory,
   fetchAllAssessmentCategories,
   submitAssessment,
+  markUserAssessmentCompleted,
   ASSESSMENT_CATEGORY_TABLES,
 } from '../lib/api.js'
 import { questionnaire, liveBmi, runPipeline } from '../lib/ruleEngine.js'
@@ -44,6 +44,10 @@ export default function Questionnaire() {
   // 1. Initial Load: user demographics, Supabase category tables, & cache
   useEffect(() => {
     const cur = getCurrentUser()
+    if (!cur) {
+      navigate('/login?redirect=/assessment', { replace: true })
+      return
+    }
     setCurrentUser(cur)
 
     const initialAnswers = {}
@@ -293,6 +297,9 @@ export default function Questionnaire() {
       }
       const result = await submitAssessment(payload)
       sessionStorage.setItem('pcos_last_result', JSON.stringify(result))
+      if (currentUser?.email) {
+        markUserAssessmentCompleted(currentUser.email, result)
+      }
 
       // Navigate to Dashboard to view results!
       navigate('/dashboard?tab=overview')
@@ -351,308 +358,309 @@ export default function Questionnaire() {
   const currentNotice = saveNotices[activeSection.key]
 
   return (
-    <div className="relative min-h-screen">
-      <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12 pt-20 sm:pt-24">
+    <div className="relative min-h-screen bg-[#F5F6F4]">
+      <div className={`relative mx-auto max-w-5xl px-4 sm:px-6 pt-20 sm:pt-24 ${assessmentMode === 'chat' ? 'pb-6 flex flex-col h-[calc(100vh-10px)] min-h-[680px]' : 'py-8 sm:py-12'}`}>
         {/* ============================================================ */}
         {/* TWO INTAKE OPTIONS SELECTOR (Consultation vs Form View)      */}
         {/* ============================================================ */}
-        <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-white/10 bg-slate-900/80 p-4 backdrop-blur-xl shadow-2xl">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-bio-500/20 text-bio-300 border border-bio-400/30 text-xs font-mono font-bold">
-              {assessmentMode === 'chat' ? 'Dx' : 'Rx'}
+        <div className="mb-6 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs">
+          <div className="flex items-center gap-3.5">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-[#E11D48] border border-rose-200 text-xs font-mono font-bold shadow-xs">
+              Rx
             </span>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-white">Intake Protocol Format</span>
-                <span className="rounded-full border border-bio-400/40 bg-bio-500/20 px-2 py-0.5 text-[10px] font-semibold text-bio-300">
-                  Select Format
-                </span>
+                <span className="text-sm font-semibold text-[#202321]">Assessment Format</span>
               </div>
-              <p className="text-xs text-slate-400">
-                Choose between conversational guided intake or structured clinical form categories.
+              <p className="text-xs text-slate-500 mt-0.5">
+                Choose between conversational guided chat or clinical form.
               </p>
             </div>
           </div>
 
-          <div className="inline-flex p-1.5 rounded-xl bg-slate-950/80 border border-white/10 shadow-inner">
+          <div className="inline-flex p-1 rounded-xl bg-[#F0F2EE] border border-slate-200 shadow-inner">
             <button
               type="button"
               onClick={() => switchMode('chat')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs transition-all ${
                 assessmentMode === 'chat'
-                  ? 'bg-gradient-to-r from-bio-400 to-bio-500 text-slate-950 shadow-md shadow-bio-500/25 font-bold'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'font-semibold bg-white text-[#202321] shadow-xs border border-slate-200/80'
+                  : 'font-medium text-slate-600 hover:text-[#202321]'
               }`}
             >
-              <span>Clinical Consultation</span>
-              <span className="rounded-full bg-slate-950/30 px-1.5 py-0.2 text-[9px] font-extrabold uppercase tracking-wider text-slate-950">
-                Primary
-              </span>
+              {assessmentMode === 'chat' && <span className="h-1.5 w-1.5 rounded-full bg-[#E11D48]" />}
+              <span>Guided Chat</span>
             </button>
             <button
               type="button"
               onClick={() => switchMode('form')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs transition-all ${
                 assessmentMode === 'form'
-                  ? 'bg-gradient-to-r from-bio-400 to-bio-500 text-slate-950 shadow-md shadow-bio-500/25 font-bold'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'font-semibold bg-white text-[#202321] shadow-xs border border-slate-200/80'
+                  : 'font-medium text-slate-600 hover:text-[#202321]'
               }`}
             >
-              <span>Category Form View</span>
+              {assessmentMode === 'form' && <span className="h-1.5 w-1.5 rounded-full bg-[#E11D48]" />}
+              <span>Form View</span>
             </button>
           </div>
         </div>
 
         {assessmentMode === 'chat' ? (
-          <ChatbotAssessment
-            answers={answers}
-            onAnswerChange={handleAnswerChange}
-            onSaveCategory={handleSaveCategory}
-            onFinalSubmit={handleFinalSubmit}
-            currentUser={currentUser}
-            demoProfile={demoProfile}
-            onLoadDemo={loadDemo}
-            onFileUpload={handleFileUpload}
-            uploadStatus={uploadStatus}
-            uploadError={uploadError}
-            setUploadStatus={setUploadStatus}
-            setUploadError={setUploadError}
-            extractedFlags={extractedFlags}
-            overallProgress={overallProgress}
-            onSwitchToForm={() => switchMode('form')}
-          />
+          <div className="flex-1 w-full min-h-[580px] rounded-3xl border border-slate-200 bg-white shadow-xs overflow-hidden flex flex-col">
+            <ChatbotAssessment
+              answers={answers}
+              onAnswerChange={handleAnswerChange}
+              onSaveCategory={handleSaveCategory}
+              onFinalSubmit={handleFinalSubmit}
+              currentUser={currentUser}
+              demoProfile={demoProfile}
+              onLoadDemo={loadDemo}
+              onFileUpload={handleFileUpload}
+              uploadStatus={uploadStatus}
+              uploadError={uploadError}
+              setUploadStatus={setUploadStatus}
+              setUploadError={setUploadError}
+              extractedFlags={extractedFlags}
+              overallProgress={overallProgress}
+              onSwitchToForm={() => switchMode('form')}
+              activeCategoryKey={activeCategoryKey}
+              onSelectCategory={(key) => jumpToCategory(key)}
+            />
+          </div>
         ) : (
           <div>
-            {/* ============================================================ */}
-            {/* TOP CONTROLS & DEMO SHORTCUTS                               */}
-            {/* ============================================================ */}
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <span className="flex h-2 w-2 rounded-full bg-bio-400 animate-pulse" />
-                <span>
-                  {currentUser?.email ? (
-                    <>
-                      Authenticated as <strong className="text-white">{currentUser.email}</strong> · Database Connected
-                    </>
-                  ) : (
-                    'Clinical Diagnostic Center'
-                  )}
+          {/* ============================================================ */}
+          {/* TOP CONTROLS & DEMO SHORTCUTS                               */}
+          {/* ============================================================ */}
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+            <div className="flex items-center gap-2 text-xs text-slate-600">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>
+                {currentUser?.email ? (
+                  <>
+                    Authenticated as <strong className="text-[#202321] font-semibold">{currentUser.email}</strong> · Cloud Synced
+                  </>
+                ) : (
+                  'Clinical Diagnostic Center'
+                )}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {demoProfile && (
+                <span className="rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-medium text-purple-700">
+                  Active Demo: {demoProfile === 'pcos' ? 'PCOS Profile' : 'Healthy Profile'}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => loadDemo('pcos')}
+                className="btn-ghost !px-3.5 !py-1.5 text-xs text-slate-700 hover:text-[#202321] rounded-full border border-slate-200 bg-white shadow-xs"
+                title="Fills every question with a PCOS-positive profile"
+              >
+                Load PCOS Profile
+              </button>
+              <button
+                type="button"
+                onClick={() => loadDemo('healthy')}
+                className="btn-ghost !px-3.5 !py-1.5 text-xs text-slate-700 hover:text-[#202321] rounded-full border border-slate-200 bg-white shadow-xs"
+                title="Fills every question with normal values"
+              >
+                Load Healthy Profile
+              </button>
+              <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition-all shadow-xs">
+                Upload Lab Report (OCR)
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* OCR Status Banner */}
+          {uploadStatus && (
+            <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-800 flex items-center justify-between shadow-xs">
+              <span>{uploadStatus}</span>
+              <button onClick={() => setUploadStatus(null)} className="text-emerald-900 hover:underline font-bold ml-3">Dismiss</button>
+            </div>
+          )}
+          {uploadError && (
+            <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-800 flex items-center justify-between shadow-xs">
+              <span>{uploadError}</span>
+              <button onClick={() => setUploadError(null)} className="text-rose-900 hover:underline font-bold ml-3">Dismiss</button>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* TITLE & OVERALL PROGRESS                                     */}
+          {/* ============================================================ */}
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <span className="chip mb-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                  7 Clinical Evaluation Categories
+                </span>
+                <h1 className="font-heading text-3xl font-semibold tracking-[-0.035em] text-[#202321] sm:text-4xl">
+                  Clinical PCOS Diagnostic Assessment
+                </h1>
+                <p className="mt-2 text-sm text-slate-600 max-w-2xl leading-relaxed">
+                  Navigate between clinical categories below to review and record your diagnostic parameters. Each category records data directly into dedicated clinical tables.
+                </p>
+              </div>
+
+              <Link
+                to="/dashboard"
+                className="btn-ghost shrink-0 self-start sm:self-auto !px-4 !py-2.5 text-xs font-semibold text-[#202321] hover:bg-slate-50 border border-slate-200 shadow-xs rounded-full"
+                title="Go to Dashboard to view calculated results"
+              >
+                View Results on Dashboard
+              </Link>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
+              <div className="flex items-center justify-between text-xs mb-2.5">
+                <span className="text-slate-700 font-medium">
+                  Overall Assessment Progress
+                </span>
+                <span className="font-mono text-[#E11D48] font-bold">
+                  {overallProgress.filled} / {overallProgress.total} Questions Answered ({overallProgress.percentage}%)
                 </span>
               </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {demoProfile && (
-                  <span className="rounded-full border border-bio-400/30 bg-bio-500/10 px-3 py-1 text-xs text-bio-200">
-                    Active Demo: {demoProfile === 'pcos' ? 'PCOS Profile' : 'Healthy Profile'}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={() => loadDemo('pcos')}
-                  className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-bio-200"
-                  title="Fills every question with a PCOS-positive profile"
-                >
-                  Load PCOS Profile
-                </button>
-                <button
-                  type="button"
-                  onClick={() => loadDemo('healthy')}
-                  className="btn-ghost !px-3 !py-1.5 text-xs text-slate-300 hover:text-bio-200"
-                  title="Fills every question with normal values"
-                >
-                  Load Healthy Profile
-                </button>
-                <label className="btn-ghost !px-3 !py-1.5 text-xs text-bio-300 hover:text-white cursor-pointer border border-bio-400/30">
-                  Upload Lab Report (OCR)
-                  <input
-                    type="file"
-                    accept=".pdf,.png,.jpg,.jpeg"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </label>
+              <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full bg-[#E11D48] transition-all duration-500 rounded-full"
+                  style={{ width: `${Math.max(4, overallProgress.percentage)}%` }}
+                />
               </div>
             </div>
+          </div>
 
-            {/* OCR Status Banner */}
-            {uploadStatus && (
-              <div className="mb-6 rounded-xl border border-bio-400/40 bg-bio-500/10 px-4 py-3 text-xs text-bio-200 flex items-center justify-between">
-                <span>{uploadStatus}</span>
-                <button onClick={() => setUploadStatus(null)} className="text-slate-400 hover:text-white font-bold ml-3">Dismiss</button>
-              </div>
-            )}
-            {uploadError && (
-              <div className="mb-6 rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-xs text-rose-300 flex items-center justify-between">
-                <span>{uploadError}</span>
-                <button onClick={() => setUploadError(null)} className="text-slate-400 hover:text-white font-bold ml-3">Dismiss</button>
-              </div>
-            )}
-
-            {/* ============================================================ */}
-            {/* TITLE & OVERALL PROGRESS                                     */}
-            {/* ============================================================ */}
-            <div className="mb-8">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <span className="chip mb-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-bio-300" />
-                    7 Clinical Evaluation Categories
-                  </span>
-                  <h1 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
-                    Clinical PCOS Diagnostic Assessment
-                  </h1>
-                  <p className="mt-2 text-sm text-slate-300 max-w-2xl leading-relaxed">
-                    Navigate between clinical categories below to review and record your diagnostic parameters. Each category records data directly into dedicated clinical tables.
-                  </p>
-                </div>
-
-                <Link
-                  to="/dashboard"
-                  className="btn-ghost shrink-0 self-start sm:self-auto !px-4 !py-2.5 text-xs font-semibold text-bio-300 hover:text-white border border-bio-400/30"
-                  title="Go to Dashboard to view calculated results"
-                >
-                  View Results on Dashboard →
-                </Link>
-              </div>
-
-          {/* Progress Bar */}
-          <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/60 p-4 backdrop-blur-md">
-            <div className="flex items-center justify-between text-xs mb-2">
-              <span className="text-slate-300 font-medium">
-                Overall Assessment Progress
-              </span>
-              <span className="font-mono text-bio-300 font-bold">
-                {overallProgress.filled} / {overallProgress.total} Questions Answered ({overallProgress.percentage}%)
+          {/* ============================================================ */}
+          {/* CATEGORY JUMPING NAVIGATION PILLS                            */}
+          {/* ============================================================ */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Jump to Category to Check / Edit Questions:
+              </p>
+              <span className="text-[11px] text-slate-500 hidden sm:inline">
+                Click any pill to inspect questions
               </span>
             </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full bg-gradient-to-r from-bio-400 to-plasma-400 transition-all duration-500 rounded-full"
-                style={{ width: `${Math.max(4, overallProgress.percentage)}%` }}
-              />
-            </div>
-          </div>
-        </div>
 
-        {/* ============================================================ */}
-        {/* CATEGORY JUMPING NAVIGATION PILLS                            */}
-        {/* (Allows user to jump and check each category's questions)    */}
-        {/* ============================================================ */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Jump to Category to Check / Edit Questions:
-            </p>
-            <span className="text-[11px] text-slate-500 hidden sm:inline">
-              Click any pill to inspect questions
-            </span>
-          </div>
-
-          {/* Horizontal Category Pill List */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-            {ASSESSMENT_SECTIONS.map((sec) => {
-              const prog = getCategoryProgress(sec, answers)
-              const isActive = sec.key === activeCategoryKey
-
-              return (
-                <button
-                  type="button"
-                  key={sec.key}
-                  onClick={() => jumpToCategory(sec.key)}
-                  className={`relative flex flex-col justify-between rounded-xl p-3 text-left transition-all ${
-                    isActive
-                      ? 'border-2 border-bio-400 bg-bio-500/20 shadow-lg shadow-bio-500/20'
-                      : 'border border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-1 mb-2">
-                    <span className="font-mono text-xs font-bold text-bio-300">0{sec.number}</span>
-                    <span
-                      className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                        prog.isComplete
-                          ? 'border border-bio-400/40 bg-bio-500/20 text-bio-300'
-                          : prog.hasAnswers
-                          ? 'border border-amber-400/30 bg-amber-500/10 text-amber-300'
-                          : 'border border-white/10 bg-white/5 text-slate-400'
-                      }`}
-                    >
-                      {prog.filled}/{prog.total}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="block font-mono text-[10px] text-slate-400">
-                      Step {sec.number}
-                    </span>
-                    <span
-                      className={`block text-xs font-semibold leading-tight line-clamp-1 ${
-                        isActive ? 'text-white' : 'text-slate-200'
-                      }`}
-                    >
-                      {sec.short}
-                    </span>
-                  </div>
-
-                  {isActive && (
-                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-1 w-6 rounded-full bg-bio-400" />
-                  )}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Quick-Jump Dropdown (Convenient on Mobile) */}
-          <div className="mt-3 flex items-center gap-2 sm:hidden">
-            <span className="text-xs text-slate-400 shrink-0">Quick jump:</span>
-            <select
-              value={activeCategoryKey}
-              onChange={(e) => jumpToCategory(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs text-white"
-            >
+            {/* Horizontal Category Pill List */}
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
               {ASSESSMENT_SECTIONS.map((sec) => {
                 const prog = getCategoryProgress(sec, answers)
+                const isActive = sec.key === activeCategoryKey
+
                 return (
-                  <option key={sec.key} value={sec.key}>
-                    {sec.number}. {sec.title} ({prog.filled}/{prog.total} answered)
-                  </option>
+                  <button
+                    type="button"
+                    key={sec.key}
+                    onClick={() => jumpToCategory(sec.key)}
+                    className={`relative flex flex-col justify-between rounded-2xl p-3.5 text-left transition-all ${
+                      isActive
+                        ? 'border-2 border-[#E11D48] bg-rose-50/70 shadow-sm ring-1 ring-rose-200'
+                        : 'border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60 shadow-xs'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1 mb-2">
+                      <span className={`font-mono text-xs font-bold ${isActive ? 'text-[#E11D48]' : 'text-slate-500'}`}>
+                        0{sec.number}
+                      </span>
+                      <span
+                        className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                          prog.isComplete
+                            ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : prog.hasAnswers
+                            ? 'border border-amber-200 bg-amber-50 text-amber-700'
+                            : 'border border-slate-200 bg-slate-50 text-slate-500'
+                        }`}
+                      >
+                        {prog.filled}/{prog.total}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="block font-mono text-[10px] text-slate-400">
+                        Step {sec.number}
+                      </span>
+                      <span
+                        className={`block text-xs font-semibold leading-tight line-clamp-1 ${
+                          isActive ? 'text-[#202321]' : 'text-slate-700'
+                        }`}
+                      >
+                        {sec.short}
+                      </span>
+                    </div>
+
+                    {isActive && (
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 h-1 w-8 rounded-full bg-[#E11D48]" />
+                    )}
+                  </button>
                 )
               })}
-            </select>
+            </div>
+
+            {/* Quick-Jump Dropdown (Convenient on Mobile) */}
+            <div className="mt-3 flex items-center gap-2 sm:hidden">
+              <span className="text-xs text-slate-500 shrink-0">Quick jump:</span>
+              <select
+                value={activeCategoryKey}
+                onChange={(e) => jumpToCategory(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-[#202321] shadow-xs"
+              >
+                {ASSESSMENT_SECTIONS.map((sec) => {
+                  const prog = getCategoryProgress(sec, answers)
+                  return (
+                    <option key={sec.key} value={sec.key}>
+                      {sec.number}. {sec.title} ({prog.filled}/{prog.total} answered)
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
           </div>
-        </div>
 
         {/* ============================================================ */}
         {/* ACTIVE CATEGORY QUESTIONS CONTAINER                          */}
         {/* ============================================================ */}
         <div id="questions-container" className="scroll-mt-24 space-y-6">
           {/* Active Category Header Card */}
-          <GlassCard className="p-6 sm:p-7 border-l-4 border-l-bio-400">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs border-l-4 border-l-[#E11D48]">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full border border-bio-400/40 bg-bio-500/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-bio-300">
+                  <span className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-rose-700">
                     Category {activeSection.number} of 7
                   </span>
-                  <span className="font-mono text-xs text-slate-400">
-                    Table: <code className="text-bio-200">{activeSection.table}</code>
+                  <span className="font-mono text-xs text-slate-500">
+                    Table: <code className="text-slate-800 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-semibold">{activeSection.table}</code>
                   </span>
                 </div>
-                <h2 className="mt-2 font-display text-2xl font-bold text-white flex items-center gap-2.5">
+                <h2 className="mt-2.5 font-heading text-2xl font-semibold text-[#202321] flex items-center gap-2.5">
                   <span>{activeSection.icon}</span>
                   <span>{activeSection.title}</span>
                 </h2>
-                <p className="mt-1 text-sm text-slate-300">
+                <p className="mt-1.5 text-sm text-slate-600">
                   {activeSection.desc}
                 </p>
               </div>
 
               {/* Individual Save Button at Top of Category */}
-              <div className="flex flex-col sm:items-end gap-2 shrink-0">
+              <div className="flex flex-col sm:items-end gap-1.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => handleSaveCategory(activeSection.key)}
                   disabled={savingCategory === activeSection.key}
-                  className="btn-primary !px-5 !py-2.5 text-xs font-semibold flex items-center gap-2 shadow-lg shadow-bio-500/20"
+                  className="btn-ghost !px-4 !py-2 text-xs font-semibold text-rose-700 border-rose-200 bg-rose-50 hover:bg-rose-100 rounded-full shadow-xs flex items-center gap-2 transition-all"
                 >
                   {savingCategory === activeSection.key ? (
                     <>
@@ -673,32 +681,32 @@ export default function Questionnaire() {
               <motion.div
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`mt-4 rounded-xl border px-4 py-2.5 text-xs font-medium flex items-center justify-between ${
+                className={`mt-4 rounded-xl border px-4 py-2.5 text-xs font-medium flex items-center justify-between shadow-xs ${
                   currentNotice.type === 'error'
-                    ? 'border-rose-400/40 bg-rose-500/10 text-rose-300'
-                    : 'border-bio-400/40 bg-bio-500/10 text-bio-200'
+                    ? 'border-rose-200 bg-rose-50 text-rose-800'
+                    : 'border-emerald-200 bg-emerald-50 text-emerald-800'
                 }`}
               >
                 <span>{currentNotice.text}</span>
-                <span className="text-bio-300 font-mono text-[10px]">Cloud Synced</span>
+                <span className="font-mono text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">Cloud Synced</span>
               </motion.div>
             )}
 
             {/* Live BMI display if Metabolic category */}
             {bmi && (
-              <div className="mt-5 flex items-center justify-between rounded-xl border border-bio-400/30 bg-bio-500/5 p-4">
+              <div className="mt-5 flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
                 <div>
-                  <p className="text-xs text-slate-400">Computed Body Mass Index (Live)</p>
-                  <p className="font-display text-lg font-bold text-white">
-                    {bmi.bmi} <span className="text-sm font-normal text-slate-400">kg/m²</span>
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Computed Body Mass Index (Live)</p>
+                  <p className="font-heading text-xl font-semibold text-[#202321] mt-0.5">
+                    {bmi.bmi} <span className="text-sm font-normal text-slate-500">kg/m²</span>
                   </p>
                 </div>
-                <span className="rounded-full border border-bio-400/40 bg-bio-500/20 px-3 py-1 text-xs font-semibold text-bio-300">
+                <span className="rounded-full border border-rose-200 bg-white px-3 py-1 text-xs font-semibold text-rose-700 shadow-xs">
                   {bmi.category}
                 </span>
               </div>
             )}
-          </GlassCard>
+          </div>
 
           {/* Active Category Questions List */}
           <AnimatePresence mode="wait">
@@ -711,9 +719,9 @@ export default function Questionnaire() {
               className="space-y-4"
             >
               {activeSection.questions.length === 0 ? (
-                <GlassCard className="p-8 text-center text-slate-400 text-sm">
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500 text-sm shadow-xs">
                   No questions found in this category.
-                </GlassCard>
+                </div>
               ) : (
                 activeSection.questions.map((q, i) => {
                   const carriedOver = Boolean(
@@ -740,10 +748,10 @@ export default function Questionnaire() {
           </AnimatePresence>
 
           {/* Bottom Action & Navigation Footer */}
-          <GlassCard className="p-5 sm:p-6 mt-8">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-7 shadow-xs mt-8">
             {/* Inline Save Notice */}
             {currentNotice && (
-              <div className="mb-4 rounded-xl border border-bio-400/40 bg-bio-500/10 px-4 py-2.5 text-xs text-bio-200">
+              <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-800 shadow-xs">
                 {currentNotice.text}
               </div>
             )}
@@ -754,18 +762,18 @@ export default function Questionnaire() {
                 type="button"
                 onClick={handlePrevCategory}
                 disabled={activeSectionIndex === 0}
-                className="btn-ghost !px-4 !py-2.5 text-xs text-slate-300 disabled:opacity-30 disabled:pointer-events-none"
+                className="btn-ghost !px-5 !py-2.5 text-xs font-semibold text-slate-700 disabled:opacity-30 disabled:pointer-events-none rounded-full border border-slate-200 shadow-xs"
               >
                 ← Previous Category
               </button>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2.5">
                 {/* Individual Save Button */}
                 <button
                   type="button"
                   onClick={() => handleSaveCategory(activeSection.key)}
                   disabled={savingCategory === activeSection.key}
-                  className="btn-ghost !px-4 !py-2.5 text-xs font-semibold text-bio-300 hover:text-white border border-bio-400/30"
+                  className="btn-ghost !px-4 !py-2.5 text-xs font-semibold text-rose-700 border-rose-200 bg-rose-50 hover:bg-rose-100 rounded-full shadow-xs"
                 >
                   {savingCategory === activeSection.key ? (
                     'Saving…'
@@ -779,23 +787,23 @@ export default function Questionnaire() {
                   <button
                     type="button"
                     onClick={() => handleSaveCategory(activeSection.key, true)}
-                    className="btn-primary !px-5 !py-2.5 text-xs font-semibold"
+                    className="btn-primary !px-6 !py-2.5 text-xs font-semibold rounded-full shadow-sm"
                   >
-                    Save & Proceed to Next Category →
+                    Save & Proceed to Next Category
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={handleFinalSubmit}
                     disabled={submittingFinal}
-                    className="btn-primary !bg-bio-400 !text-slate-950 !px-6 !py-2.5 text-xs font-bold hover:!bg-bio-300 shadow-xl shadow-bio-500/30"
+                    className="btn-primary !bg-[#E11D48] hover:!bg-[#BE123C] text-white !px-7 !py-3 text-xs font-bold rounded-full shadow-md"
                   >
                     {submittingFinal ? (
                       <>
                         <Spinner /> Generating Diagnostic Report…
                       </>
                     ) : (
-                      'Save & Generate Diagnostic Report →'
+                      'Save & Generate Diagnostic Report'
                     )}
                   </button>
                 )}
@@ -804,24 +812,24 @@ export default function Questionnaire() {
 
             {/* Quick Skip Helper */}
             {activeSectionIndex < ASSESSMENT_SECTIONS.length - 1 && (
-              <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3 text-[11px] text-slate-500">
+              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-[11px] text-slate-500">
                 <span>Want to fill other categories first?</span>
                 <button
                   type="button"
                   onClick={handleNextCategory}
-                  className="text-slate-400 hover:text-bio-300 underline"
+                  className="text-rose-600 hover:text-rose-700 font-medium underline"
                 >
-                  Skip to Next Category without saving →
+                  Skip to Next Category without saving
                 </button>
               </div>
             )}
-          </GlassCard>
-        </div>
           </div>
-        )}
+        </div>
       </div>
+      )}
     </div>
-  )
+  </div>
+)
 }
 
 function Spinner() {

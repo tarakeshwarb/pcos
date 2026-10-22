@@ -4,7 +4,7 @@ function NumberInput({ field, value, onChange }) {
   return (
     <div>
       <label className="field-label">
-        {field.label} {field.unit && <span className="text-slate-500">({field.unit})</span>}
+        {field.label} {field.unit && <span className="text-slate-500 normal-case font-normal">({field.unit})</span>}
       </label>
       <input
         type="number"
@@ -24,23 +24,33 @@ function YesNoInput({ field, value, onChange }) {
   return (
     <div>
       <label className="field-label">{field.label}</label>
-      <div className="grid grid-cols-2 gap-2.5">
-        {['yes', 'no'].map((opt) => (
-          <button
-            type="button"
-            key={opt}
-            className="tick-toggle"
-            data-active={value === opt}
-            onClick={() => onChange(field.key, opt)}
-          >
-            <span className="text-sm font-medium capitalize text-slate-200">{opt}</span>
-            <span
-              className={`h-4 w-4 rounded-full border transition-all ${
-                value === opt ? 'border-bio-300 bg-bio-300 shadow-glow' : 'border-white/20'
+      <div className="grid grid-cols-2 gap-3">
+        {['yes', 'no'].map((opt) => {
+          const isActive = value === opt
+          return (
+            <button
+              type="button"
+              key={opt}
+              onClick={() => onChange(field.key, opt)}
+              className={`flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all ${
+                isActive
+                  ? 'border-rose-300 bg-rose-50/70 text-[#202321] font-semibold shadow-xs ring-1 ring-rose-200'
+                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
               }`}
-            />
-          </button>
-        ))}
+            >
+              <span className="text-sm capitalize">{opt}</span>
+              <span
+                className={`flex h-4 w-4 items-center justify-center rounded-full border transition-all ${
+                  isActive
+                    ? 'border-[#E11D48] bg-[#E11D48] ring-2 ring-rose-200'
+                    : 'border-slate-300 bg-white'
+                }`}
+              >
+                {isActive && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+              </span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -51,20 +61,23 @@ function SelectInput({ field, value, onChange }) {
     <div>
       <label className="field-label">{field.label}</label>
       <div className="flex flex-wrap gap-2">
-        {field.options.map((opt) => (
-          <button
-            type="button"
-            key={opt}
-            onClick={() => onChange(field.key, opt)}
-            className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${
-              value === opt
-                ? 'border-bio-300/60 bg-bio-400/15 text-bio-100 shadow-glow'
-                : 'border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/25'
-            }`}
-          >
-            {opt}
-          </button>
-        ))}
+        {field.options.map((opt) => {
+          const isActive = value === opt
+          return (
+            <button
+              type="button"
+              key={opt}
+              onClick={() => onChange(field.key, opt)}
+              className={`rounded-full border px-4 py-2 text-xs font-medium transition-all ${
+                isActive
+                  ? 'border-rose-300 bg-rose-50 text-rose-800 font-semibold shadow-xs ring-1 ring-rose-200'
+                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              {opt}
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -73,17 +86,15 @@ function SelectInput({ field, value, onChange }) {
 function ScaleInput({ field, value, onChange }) {
   const hasValue = value !== '' && value !== undefined
   const v = hasValue ? Number(value) : field.min
-  // Plain-language meaning of the current value (mentor feedback: any scale
-  // used needs a plain-language definition shown to the user -- "what does
-  // a 7 mean?"), e.g. PSS-10's Never/Sometimes/Very Often anchors.
   const liveLabel = field.labels?.[v]
+
   return (
     <div>
       <div className="field-label flex items-center justify-between">
         <span>{field.label}</span>
-        <span className="font-mono text-bio-300">
+        <span className="font-mono text-xs font-bold text-[#E11D48]">
           {hasValue ? v : '—'}
-          {hasValue && liveLabel && <span className="ml-1.5 font-sans text-slate-400">({liveLabel})</span>}
+          {hasValue && liveLabel && <span className="ml-1.5 font-sans font-normal text-slate-600">({liveLabel})</span>}
         </span>
       </div>
       <input
@@ -92,9 +103,9 @@ function ScaleInput({ field, value, onChange }) {
         max={field.max}
         value={v}
         onChange={(e) => onChange(field.key, Number(e.target.value))}
-        className="w-full accent-bio-400"
+        className="w-full accent-[#E11D48] cursor-pointer"
       />
-      <div className="mt-1 flex justify-between text-xs text-slate-500">
+      <div className="mt-1.5 flex justify-between text-[11px] text-slate-500 font-medium">
         <span>{field.labels ? field.labels[field.min] : field.min}</span>
         <span>{field.labels ? field.labels[field.max] : field.max}</span>
       </div>
@@ -110,6 +121,7 @@ function TextInput({ field, value, onChange }) {
         type="text"
         className="input-glass"
         value={value ?? ''}
+        placeholder="Enter details…"
         onChange={(e) => onChange(field.key, e.target.value)}
       />
     </div>
@@ -125,16 +137,17 @@ function FieldRenderer({ field, value, onChange }) {
 }
 
 const CATEGORY_STYLE = {
-  'Clinical Evaluation': 'text-bio-300 border-bio-300/30 bg-bio-400/10',
-  'Biochemical Evaluation': 'text-plasma-400 border-plasma-400/30 bg-plasma-500/10',
-  'Root Cause Analysis': 'text-amber-300 border-amber-300/30 bg-amber-400/10',
+  'Clinical Evaluation': 'text-slate-700 border-slate-200 bg-slate-100',
+  'Biochemical Evaluation': 'text-rose-700 border-rose-200 bg-rose-50',
+  'Root Cause Analysis': 'text-amber-800 border-amber-200 bg-amber-50',
 }
 
 const FLAG_STYLE = {
-  normal: 'text-bio-300 border-bio-300/30 bg-bio-400/10',
-  overriding: 'text-alert-400 border-alert-500/30 bg-alert-500/10',
-  unknown: 'text-slate-400 border-white/10 bg-white/5',
+  normal: 'text-emerald-700 border-emerald-200 bg-emerald-50',
+  overriding: 'text-rose-700 border-rose-200 bg-rose-50',
+  unknown: 'text-slate-600 border-slate-200 bg-slate-50',
 }
+
 const FLAG_LABEL = {
   normal: 'From your report · within reference range',
   overriding: 'From your report · outside reference range',
@@ -144,41 +157,45 @@ const FLAG_LABEL = {
 export default function QuestionCard({ question, index, answers, onChange, carriedOver, reportFlag }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: index * 0.03 }}
+      transition={{ duration: 0.3, delay: Math.min(index * 0.02, 0.2) }}
     >
-      <div className="glass rounded-2xl p-5 sm:p-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-xs hover:border-slate-300 transition-all">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-white/5 font-mono text-[11px] text-slate-400">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-slate-100 font-mono text-[11px] font-semibold text-slate-600 border border-slate-200">
               {String(index + 1).padStart(2, '0')}
             </span>
-            <h3 className="font-display text-sm font-semibold text-slate-100 sm:text-base">{question.label}</h3>
+            <h3 className="font-heading text-base font-semibold text-[#202321] sm:text-lg tracking-[-0.015em]">
+              {question.label}
+            </h3>
           </div>
-          <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${CATEGORY_STYLE[question.category] || ''}`}>
+          <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${CATEGORY_STYLE[question.category] || 'text-slate-700 border-slate-200 bg-slate-100'}`}>
             {question.category}
           </span>
         </div>
 
         {question.reference && (
-          <div className="mb-4 field-ref">Reference: {question.reference}</div>
+          <div className="mb-4 inline-flex items-center gap-1.5 text-xs text-rose-700 font-mono font-medium bg-rose-50/60 border border-rose-100 px-2.5 py-1 rounded-lg">
+            Reference: {question.reference}
+          </div>
         )}
         
         {question.description && (
-          <div className="mb-4 text-xs text-slate-400 bg-white/5 p-2 rounded-lg">
+          <div className="mb-4 text-xs text-slate-600 bg-slate-50 border border-slate-100 p-3 rounded-xl leading-relaxed">
             {question.description}
           </div>
         )}
 
         {reportFlag && (
-          <div className={`mb-4 inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${FLAG_STYLE[reportFlag.flag] || FLAG_STYLE.unknown}`}>
+          <div className={`mb-4 inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${FLAG_STYLE[reportFlag.flag] || FLAG_STYLE.unknown}`}>
             {FLAG_LABEL[reportFlag.flag] || FLAG_LABEL.unknown}
           </div>
         )}
 
         {carriedOver ? (
-          <div className="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600 font-medium">
             Already answered in an earlier section — reused here automatically.
           </div>
         ) : (

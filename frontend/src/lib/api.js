@@ -110,6 +110,9 @@ export async function submitAssessment(payload) {
       source: 'supabase',
     }
     sessionStorage.setItem('pcos_last_result', JSON.stringify(fullResult))
+    if (submissionPayload.email) {
+      markUserAssessmentCompleted(submissionPayload.email, fullResult)
+    }
     return fullResult
   } catch (err) {
     console.warn('Supabase submit error, falling back to local result:', err)
@@ -124,6 +127,10 @@ export async function submitAssessment(payload) {
       _localPayload: payload,
     }
     sessionStorage.setItem('pcos_last_result', JSON.stringify(localResult))
+    const userEmail = payload.email || getCurrentUser()?.email
+    if (userEmail) {
+      markUserAssessmentCompleted(userEmail, localResult)
+    }
     return localResult
   }
 }
@@ -379,6 +386,101 @@ export async function fetchUserSubmissions(email) {
   } catch {}
 
   return []
+}
+
+export async function hasUserCompletedAssessment(email) {
+  if (!email) return false
+  const normalizedEmail = email.trim().toLowerCase()
+
+  // 1. Check local storage accounts for explicit assessment flag
+  try {
+    const raw = localStorage.getItem('pcos_accounts')
+    if (raw) {
+      const accounts = JSON.parse(raw)
+      if (accounts[normalizedEmail]?.has_assessment) return true
+    }
+  } catch {}
+
+  // 2. Check cached assessment for this user
+  try {
+    const cached = localStorage.getItem(`pcos_assessment_${normalizedEmail}`)
+    if (cached) return true
+  } catch {}
+
+  // 3. Check sessionStorage if completed in current session
+  try {
+    const cachedResult = sessionStorage.getItem('pcos_last_result')
+    if (cachedResult) {
+      const parsed = JSON.parse(cachedResult)
+      if (parsed.id !== 'preview' && (parsed.classification || parsed.scores)) {
+        if (!parsed.email || parsed.email === normalizedEmail) {
+          markUserAssessmentCompleted(normalizedEmail, parsed)
+          return true
+        }
+      }
+    }
+  } catch {}
+
+  // 4. Query Supabase submissions table
+  try {
+    const { data, error } = await supabase
+      .from('submissions')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .limit(1)
+
+    if (!error && Array.isArray(data) && data.length > 0) {
+      markUserAssessmentCompleted(normalizedEmail)
+      return true
+    }
+  } catch (e) {
+    console.warn('Supabase submissions check error:', e)
+  }
+
+  // 5. Query Supabase medical_records table
+  try {
+    const { data: med } = await supabase
+      .from('medical_records')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .limit(1)
+
+    if (med && med.length > 0) {
+      markUserAssessmentCompleted(normalizedEmail)
+      return true
+    }
+  } catch {}
+
+  return false
+}
+
+export function markUserAssessmentCompleted(email, assessmentData = null) {
+  if (!email) return
+  const normalizedEmail = email.trim().toLowerCase()
+  try {
+    if (assessmentData) {
+      localStorage.setItem(`pcos_assessment_${normalizedEmail}`, JSON.stringify(assessmentData))
+    } else {
+      localStorage.setItem(`pcos_assessment_${normalizedEmail}`, 'true')
+    }
+
+    const raw = localStorage.getItem('pcos_accounts')
+    if (raw) {
+      const accounts = JSON.parse(raw)
+      if (accounts[normalizedEmail]) {
+        accounts[normalizedEmail].has_assessment = true
+        localStorage.setItem('pcos_accounts', JSON.stringify(accounts))
+      }
+    }
+
+    const cur = getCurrentUser()
+    if (cur && cur.email === normalizedEmail) {
+      cur.has_assessment = true
+      localStorage.setItem('pcos_current_user', JSON.stringify(cur))
+    }
+  } catch (e) {
+    console.error('Error marking user assessment completed:', e)
+  }
 }
 
 // ==========================================

@@ -11,7 +11,7 @@ export default function ProgressRail({ steps, currentIndex }) {
       </div>
       <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-white/5">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-bio-400 to-plasma-500 shadow-glow transition-all duration-500 ease-out"
+          className="h-full rounded-full bg-[#7C3AED] transition-all duration-500 ease-out"
           style={{ width: `${pct}%` }}
         />
       </div>

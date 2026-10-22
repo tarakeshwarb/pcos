@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import GlassCard from '../components/GlassCard.jsx'
-import { loginUser, registerUser } from '../lib/api.js'
+import { loginUser, registerUser, hasUserCompletedAssessment } from '../lib/api.js'
 
 export default function Auth({ defaultTab = 'register' }) {
   const navigate = useNavigate()
@@ -90,7 +90,13 @@ export default function Auth({ defaultTab = 'register' }) {
     setLoading(false)
 
     if (res.success) {
-      navigate('/dashboard')
+      const userEmail = res.user?.email || email.trim()
+      const hasCompleted = await hasUserCompletedAssessment(userEmail)
+      if (hasCompleted) {
+        navigate('/dashboard', { replace: true })
+      } else {
+        navigate('/assessment', { replace: true })
+      }
     } else {
       setError(res.error || 'Failed to create account. Please try again.')
     }
@@ -106,7 +112,13 @@ export default function Auth({ defaultTab = 'register' }) {
     setLoading(false)
 
     if (res.success) {
-      navigate('/dashboard')
+      const userEmail = res.user?.email || email.trim()
+      const hasCompleted = await hasUserCompletedAssessment(userEmail)
+      if (hasCompleted) {
+        navigate('/dashboard', { replace: true })
+      } else {
+        navigate('/assessment', { replace: true })
+      }
     } else {
       setError(res.error || 'Invalid email or password.')
     }
@@ -127,14 +139,14 @@ export default function Auth({ defaultTab = 'register' }) {
                 : 'Step 2 of 2: Health Profile'
               : 'Patient Access'}
           </span>
-          <h1 className="font-display text-3xl font-bold text-white sm:text-4xl">
+          <h1 className="font-heading text-3xl font-semibold text-[#0A192F] sm:text-4xl tracking-[-0.025em]">
             {isRegister
               ? regStep === 1
                 ? 'Create Your Account'
                 : 'Personal Details & Health Profile'
               : 'Welcome Back'}
           </h1>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm sm:text-base text-slate-600 leading-[1.6] font-normal">
             {isRegister
               ? regStep === 1
                 ? 'Register with your name, email, and password to begin your clinical intake.'
@@ -143,10 +155,10 @@ export default function Auth({ defaultTab = 'register' }) {
           </p>
         </div>
 
-        <GlassCard strong className="p-8 sm:p-10 shadow-2xl shadow-bio-500/10">
+        <div className="rounded-3xl border border-slate-200 bg-white p-8 sm:p-10 shadow-lg">
           {/* Tab Switcher (Visible on Login or Step 1) */}
           {(!isRegister || regStep === 1) && (
-            <div className="mb-6 flex rounded-xl border border-white/10 bg-white/[0.03] p-1">
+            <div className="mb-6 flex rounded-xl border border-slate-200 bg-slate-50 p-1">
               <button
                 type="button"
                 onClick={() => {
@@ -156,8 +168,8 @@ export default function Auth({ defaultTab = 'register' }) {
                 }}
                 className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
                   !isRegister
-                    ? 'bg-bio-500/20 text-bio-200 shadow-sm border border-bio-400/30'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                    : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
                 Sign In
@@ -171,8 +183,8 @@ export default function Auth({ defaultTab = 'register' }) {
                 }}
                 className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-all ${
                   isRegister
-                    ? 'bg-bio-500/20 text-bio-200 shadow-sm border border-bio-400/30'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                    : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
                 Register
@@ -184,7 +196,7 @@ export default function Auth({ defaultTab = 'register' }) {
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="mb-6 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-xs text-rose-300"
+              className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700"
             >
               {error}
             </motion.div>
@@ -196,7 +208,7 @@ export default function Auth({ defaultTab = 'register' }) {
           {!isRegister && (
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
                   Email Address
                 </label>
                 <input
@@ -205,12 +217,12 @@ export default function Auth({ defaultTab = 'register' }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-bio-400 focus:outline-none focus:ring-1 focus:ring-bio-400 transition-colors"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 transition-colors shadow-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
                   Password
                 </label>
                 <input
@@ -219,22 +231,22 @@ export default function Auth({ defaultTab = 'register' }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-bio-400 focus:outline-none focus:ring-1 focus:ring-bio-400 transition-colors"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 transition-colors shadow-xs"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full justify-center !py-3.5 mt-2 font-semibold shadow-lg shadow-bio-500/20 disabled:opacity-60"
+                className="btn-primary w-full justify-center !py-3.5 mt-2 font-semibold shadow-md disabled:opacity-60"
               >
                 {loading ? (
                   <span className="flex items-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     Signing In…
                   </span>
                 ) : (
-                  <span>Sign In to Dashboard →</span>
+                  <span>Sign In to Dashboard</span>
                 )}
               </button>
             </form>
@@ -246,7 +258,7 @@ export default function Auth({ defaultTab = 'register' }) {
           {isRegister && regStep === 1 && (
             <form onSubmit={handleStep1Next} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
                   Full Name
                 </label>
                 <input
@@ -255,12 +267,12 @@ export default function Auth({ defaultTab = 'register' }) {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="e.g. Jane Doe"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-bio-400 focus:outline-none focus:ring-1 focus:ring-bio-400 transition-colors"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 transition-colors shadow-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
                   Email Address (Account ID)
                 </label>
                 <input
@@ -269,12 +281,12 @@ export default function Auth({ defaultTab = 'register' }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-bio-400 focus:outline-none focus:ring-1 focus:ring-bio-400 transition-colors"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 transition-colors shadow-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
                   Password
                 </label>
                 <input
@@ -283,12 +295,12 @@ export default function Auth({ defaultTab = 'register' }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 6 characters"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-bio-400 focus:outline-none focus:ring-1 focus:ring-bio-400 transition-colors"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 transition-colors shadow-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
                   Confirm Password
                 </label>
                 <input
@@ -297,15 +309,15 @@ export default function Auth({ defaultTab = 'register' }) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter password"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-bio-400 focus:outline-none focus:ring-1 focus:ring-bio-400 transition-colors"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder-slate-400 focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500 transition-colors shadow-xs"
                 />
               </div>
 
               <button
                 type="submit"
-                className="btn-primary w-full justify-center !py-3.5 mt-2 font-semibold shadow-lg shadow-bio-500/20"
+                className="btn-primary w-full justify-center !py-3.5 mt-2 font-semibold shadow-md"
               >
-                Continue to Fill Personal Details →
+                Continue to Personal Details
               </button>
             </form>
           )}
@@ -315,8 +327,8 @@ export default function Auth({ defaultTab = 'register' }) {
           {/* ========================================================= */}
           {isRegister && regStep === 2 && (
             <form onSubmit={handleFinalRegister} className="space-y-5">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <span className="text-xs text-bio-300 font-semibold uppercase tracking-wider">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <span className="text-xs text-rose-600 font-semibold uppercase tracking-wider">
                   Demographics & Preferences
                 </span>
                 <button
@@ -325,7 +337,7 @@ export default function Auth({ defaultTab = 'register' }) {
                     setRegStep(1)
                     setError(null)
                   }}
-                  className="text-xs text-slate-400 hover:text-white transition-colors"
+                  className="text-xs text-slate-500 hover:text-slate-900 transition-colors"
                 >
                   ← Edit Credentials
                 </button>
@@ -333,7 +345,7 @@ export default function Auth({ defaultTab = 'register' }) {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Full Name
                   </label>
                   <input
@@ -341,36 +353,36 @@ export default function Auth({ defaultTab = 'register' }) {
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Email Address (Account ID)
                   </label>
                   <input
                     type="email"
                     disabled
                     value={email}
-                    className="w-full rounded-xl border border-white/5 bg-white/5 px-4 py-2.5 text-xs text-slate-500 cursor-not-allowed"
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-xs text-slate-400 cursor-not-allowed"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Date of Birth
                   </label>
                   <input
                     type="date"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Phone Number
                   </label>
                   <input
@@ -378,12 +390,12 @@ export default function Auth({ defaultTab = 'register' }) {
                     placeholder="+91..."
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Height (cm)
                   </label>
                   <input
@@ -391,12 +403,12 @@ export default function Auth({ defaultTab = 'register' }) {
                     placeholder="e.g. 165"
                     value={height}
                     onChange={(e) => setHeight(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Weight (kg)
                   </label>
                   <input
@@ -404,18 +416,18 @@ export default function Auth({ defaultTab = 'register' }) {
                     placeholder="e.g. 62"
                     value={weight}
                     onChange={(e) => setWeight(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Regional Cuisine
                   </label>
                   <select
                     value={regionPreference}
                     onChange={(e) => setRegionPreference(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   >
                     <option value="South Indian">South Indian</option>
                     <option value="North Indian">North Indian</option>
@@ -425,13 +437,13 @@ export default function Auth({ defaultTab = 'register' }) {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-300">
+                  <label className="mb-1 block text-xs font-semibold uppercase text-slate-700">
                     Dietary Pattern
                   </label>
                   <select
                     value={dietType}
                     onChange={(e) => setDietType(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-2.5 text-xs text-white focus:border-bio-400 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:border-rose-500 focus:outline-none shadow-xs"
                   >
                     <option value="Vegetarian">Vegetarian</option>
                     <option value="Eggetarian">Eggetarian</option>
@@ -442,10 +454,10 @@ export default function Auth({ defaultTab = 'register' }) {
               </div>
 
               {bmi && (
-                <div className="rounded-xl border border-bio-400/20 bg-bio-500/5 p-4 flex items-center justify-between">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between">
                   <div>
-                    <span className="text-xs text-slate-400">Calculated Body Mass Index (BMI)</span>
-                    <p className="text-lg font-bold text-white">{bmi} kg/m²</p>
+                    <span className="text-xs text-slate-500">Calculated Body Mass Index (BMI)</span>
+                    <p className="text-lg font-bold text-slate-900">{bmi} kg/m²</p>
                   </div>
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${getBmiBadge(bmi).color}`}>
                     {getBmiBadge(bmi).text}
@@ -460,7 +472,7 @@ export default function Auth({ defaultTab = 'register' }) {
                     setRegStep(1)
                     setError(null)
                   }}
-                  className="btn-ghost !px-4 !py-3 text-xs text-slate-300 sm:w-auto"
+                  className="btn-ghost !px-4 !py-3 text-xs text-slate-600 sm:w-auto"
                 >
                   ← Back
                 </button>
@@ -468,15 +480,15 @@ export default function Auth({ defaultTab = 'register' }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-primary flex-1 justify-center !py-3.5 font-semibold shadow-lg shadow-bio-500/20 disabled:opacity-60"
+                  className="btn-primary flex-1 justify-center !py-3.5 font-semibold shadow-md disabled:opacity-60"
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                       Saving to Supabase & Creating Account…
                     </span>
                   ) : (
-                    <span>Save Profile Changes & Enter Dashboard →</span>
+                    <span>Save Profile & Enter Dashboard</span>
                   )}
                 </button>
               </div>
@@ -484,9 +496,9 @@ export default function Auth({ defaultTab = 'register' }) {
           )}
 
           {/* Footer toggle */}
-          <div className="mt-6 border-t border-white/5 pt-5 text-center">
+          <div className="mt-6 border-t border-slate-100 pt-5 text-center">
             {isRegister ? (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Already registered?{' '}
                 <button
                   type="button"
@@ -495,13 +507,13 @@ export default function Auth({ defaultTab = 'register' }) {
                     setRegStep(1)
                     setError(null)
                   }}
-                  className="font-semibold text-bio-300 hover:text-bio-200 transition-colors"
+                  className="font-semibold text-rose-600 hover:text-rose-700 transition-colors"
                 >
                   Sign In here
                 </button>
               </p>
             ) : (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 First time here?{' '}
                 <button
                   type="button"
@@ -510,14 +522,14 @@ export default function Auth({ defaultTab = 'register' }) {
                     setRegStep(1)
                     setError(null)
                   }}
-                  className="font-semibold text-bio-300 hover:text-bio-200 transition-colors"
+                  className="font-semibold text-rose-600 hover:text-rose-700 transition-colors"
                 >
                   Create an account
                 </button>
               </p>
             )}
           </div>
-        </GlassCard>
+        </div>
       </motion.div>
     </div>
   )

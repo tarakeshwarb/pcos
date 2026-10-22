@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import GlassCard from '../components/GlassCard.jsx'
 import PhenotypeRadar from '../components/PhenotypeRadar.jsx'
+import UnifiedLogDashboard from '../components/LogAnalyticsGraph.jsx'
 import {
   getCurrentUser,
   updatePatientProfile,
@@ -57,6 +58,18 @@ export default function Dashboard({ initialTab }) {
   const [submissions, setSubmissions] = useState([])
   const [loadingSubmissions, setLoadingSubmissions] = useState(false)
   const [lastResult, setLastResult] = useState(null)
+
+  useEffect(() => {
+    if (tabFromUrl === 'history') {
+      navigate('/reports', { replace: true })
+    } else if (tabFromUrl === 'diet' || tabFromUrl === 'protocol') {
+      navigate('/diet', { replace: true })
+    } else if (tabFromUrl === 'cycle-log' || tabFromUrl === 'cycle') {
+      navigate('/cycle-log', { replace: true })
+    } else if (tabFromUrl === 'journey' || tabFromUrl === 'daily-log') {
+      navigate('/journey', { replace: true })
+    }
+  }, [tabFromUrl, navigate])
 
   // First-time notification modal state
   const [showNotificationModal, setShowNotificationModal] = useState(false)
@@ -132,16 +145,29 @@ export default function Dashboard({ initialTab }) {
       living_environment: cur.demographics?.living_environment || '',
     })
 
-    // Load last result from cache if available
+    // Load last result from cache if available (ensuring it belongs to this user and is not a preview baseline)
     let cachedResult = null
     const cached = sessionStorage.getItem('pcos_last_result')
     if (cached) {
       try {
-        cachedResult = JSON.parse(cached)
-        setLastResult(cachedResult)
+        const parsed = JSON.parse(cached)
+        if (parsed && parsed.id !== 'preview' && (!parsed.email || !cur.email || parsed.email === cur.email)) {
+          cachedResult = parsed
+          setLastResult(cachedResult)
+        }
       } catch (e) {
         console.error(e)
       }
+    }
+
+    if (!cachedResult && cur.email) {
+      try {
+        const localUserAssessment = localStorage.getItem(`pcos_assessment_${cur.email}`)
+        if (localUserAssessment && localUserAssessment !== 'true') {
+          cachedResult = JSON.parse(localUserAssessment)
+          setLastResult(cachedResult)
+        }
+      } catch (e) {}
     }
 
     if (cur.email) {
@@ -203,16 +229,6 @@ export default function Dashboard({ initialTab }) {
         const localLogs = localStorage.getItem('pcos_journey_entries')
         if (localLogs) setJourneyEntries(JSON.parse(localLogs))
       } catch {}
-
-      // If no result exists yet, create baseline from pipeline so the results are always visible
-      if (!cachedResult) {
-        const baseline = runPipeline({}, cur.region_preference || 'South Indian', cur.diet_type || 'Vegetarian')
-        setLastResult({
-          id: 'preview',
-          created_at: new Date().toISOString(),
-          ...baseline,
-        })
-      }
     }
   }, [navigate])
 
@@ -284,6 +300,13 @@ export default function Dashboard({ initialTab }) {
 
   if (!user) return null
 
+  // Check if user has genuinely completed the clinical assessment
+  const hasCompletedAssessment = Boolean(
+    lastResult &&
+    lastResult.id !== 'preview' &&
+    (lastResult.classification || lastResult.scores)
+  )
+
   // Active primary phenotype resolution
   const primaryPhenotype = lastResult?.classification?.primary_phenotype || 'metabolic'
   const dietCategory = profileData.diet_type === 'Non-Vegetarian' ? 'non_vegetarian' : 'vegetarian'
@@ -353,7 +376,7 @@ export default function Dashboard({ initialTab }) {
                   onClick={() => dismissNotificationModal(true)}
                   className="btn-primary flex-1 justify-center !py-3 text-sm font-semibold shadow-lg shadow-bio-500/25"
                 >
-                  Fill Medical Details Now →
+                  Fill Medical Details Now
                 </button>
                 <button
                   type="button"
@@ -375,115 +398,145 @@ export default function Dashboard({ initialTab }) {
       <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            <h1 className="font-heading text-3xl font-semibold tracking-[-0.025em] text-[#0A192F] sm:text-4xl">
               Hello, {user.full_name || 'Patient'}
             </h1>
-            <span className="rounded-full border border-bio-400/30 bg-bio-500/10 px-3 py-1 text-xs font-semibold text-bio-300">
+            <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
               Active Patient
             </span>
           </div>
-          <p className="mt-1 text-sm text-slate-400">
-            Personal PCOS Health Dashboard & Clinical Decision Support
+          <p className="mt-1 text-sm text-slate-600">
+            Personal Health Dashboard
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
             to="/assessment"
-            className="btn-primary !px-4 !py-2 text-xs font-semibold"
+            className="btn-primary !px-5 !py-2.5 text-xs font-semibold rounded-full shadow-sm"
           >
-            {lastResult ? '↻ Update Answers in Assessment' : '▶ Start Clinical Assessment'}
+            {hasCompletedAssessment ? 'Retake Assessment' : 'Take Assessment'}
           </Link>
         </div>
       </div>
 
-      {/* Pending Medical Details Banner if not completed */}
-      {!lastResult && (
+      {/* Assessment Required Top Banner if not completed */}
+      {!hasCompletedAssessment && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-col items-start justify-between gap-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:p-5"
+          className="mb-8 overflow-hidden rounded-3xl border border-rose-200 bg-rose-50/70 p-6 sm:p-8 shadow-xs"
         >
-          <div className="flex items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/20 text-amber-300 font-mono text-xs font-bold border border-amber-400/30">
-              !
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-amber-200">
-                PCOS Phenotype Assessment Pending
-              </p>
-              <p className="text-xs text-amber-300/80">
-                Complete your clinical questions in the Assessment section to unlock your full diagnostic results and personalized nutrition plan.
-              </p>
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E11D48] text-white shadow-sm font-bold text-lg">
+                !
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-rose-100 border border-rose-300 px-2.5 py-0.5 text-[11px] font-semibold text-rose-800 uppercase tracking-wider">
+                    Assessment Required
+                  </span>
+                  <span className="text-xs text-rose-700 font-medium">To see results & monitor</span>
+                </div>
+                <h2 className="font-heading text-lg sm:text-xl font-semibold text-[#202321]">
+                  Complete your clinical assessment to view diagnostic results.
+                </h2>
+                <p className="text-xs sm:text-sm text-[#626762] max-w-xl leading-relaxed">
+                  Evaluates your biomarkers and symptoms to identify your PCOS root phenotype.
+                </p>
+              </div>
             </div>
+            <Link
+              to="/assessment"
+              className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#E11D48] px-5 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-[#BE123C] active:scale-95 transition-all"
+            >
+              Take Assessment
+            </Link>
           </div>
-          <Link
-            to="/assessment"
-            className="btn-primary shrink-0 !bg-amber-400 !text-slate-950 !px-4 !py-2 text-xs font-bold hover:!bg-amber-300"
-          >
-            Open Assessment Questionnaire →
-          </Link>
         </motion.div>
       )}
 
       {/* ============================================================ */}
-      {/* NAVBAR WITH DIFFERENT CATEGORIES (RESULTS ONLY)             */}
+      {/* SECTION HEADER: CLINICAL RESULTS & OVERVIEW                  */}
       {/* ============================================================ */}
-      <div className="mb-8 flex flex-wrap gap-2 border-b border-white/10 pb-4">
-        {[
-          { id: 'overview', label: 'Clinical Results & Overview' },
-          { id: 'diet', label: 'Diet & Lifestyle Protocol' },
-          { id: 'journey', label: 'Daily Cycle Log' },
-          { id: 'history', label: 'Past Reports History' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all ${
-              activeTab === tab.id
-                ? 'bg-bio-500/20 text-bio-200 border border-bio-400/40 shadow-sm font-semibold'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
-            }`}
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5">
+        <div>
+          <span className="chip mb-2 border-purple-200/80 bg-purple-50/70 text-purple-900 shadow-2xs">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#7C3AED]" />
+            Clinical Overview
+          </span>
+          <h2 className="font-heading text-2xl sm:text-3xl font-semibold tracking-[-0.03em] text-[#202321]">
+            Results & Monitoring
+          </h2>
+          <p className="mt-1 text-xs sm:text-sm text-[#626762]">
+            Biomarker diagnostics, root-cause phenotype, and clinical tracking.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            to="/diet"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:border-purple-300 hover:text-purple-700 hover:bg-purple-50/40 transition-all"
           >
-            <span>{tab.icon}</span>
-            <span>{tab.label}</span>
-          </button>
-        ))}
+            <span>Diet Protocol</span>
+          </Link>
+          <Link
+            to="/cycle-log"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:border-purple-300 hover:text-purple-700 hover:bg-purple-50/40 transition-all"
+          >
+            <span>Daily Cycle Log</span>
+          </Link>
+          <Link
+            to="/journey"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:border-purple-300 hover:text-purple-700 hover:bg-purple-50/40 transition-all"
+          >
+            <span>Daily Log</span>
+          </Link>
+          <Link
+            to="/reports"
+            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50/70 px-3.5 py-2 text-xs font-semibold text-rose-700 shadow-2xs hover:border-rose-400 hover:bg-rose-100 transition-all"
+          >
+            <svg className="w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Reports</span>
+          </Link>
+        </div>
       </div>
 
       {/* ============================================================ */}
-      {/* TAB 1: OVERVIEW & HEALTH STATUS                              */}
+      {/* OVERVIEW & HEALTH STATUS CONTENT                             */}
       {/* ============================================================ */}
-      {activeTab === 'overview' && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
           {/* Quick Snapshot Metric Cards */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <GlassCard className="p-4">
-              <p className="text-xs text-slate-400">Diagnostic Status</p>
-              <p className="mt-1 font-display text-base font-semibold text-white">
-                {lastResult ? (
-                  <span className="text-bio-300">Assessed</span>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <p className="text-xs text-slate-500">Diagnostic Status</p>
+              <p className="mt-1 font-display text-base font-semibold text-slate-900">
+                {hasCompletedAssessment ? (
+                  <span className="text-emerald-600 font-bold">Assessed</span>
                 ) : (
-                  <span className="text-amber-300">Pending Evaluation</span>
+                  <span className="text-amber-600 font-bold">Assessment Pending</span>
                 )}
               </p>
-            </GlassCard>
+            </div>
 
-            <GlassCard className="p-4">
-              <p className="text-xs text-slate-400">Primary Phenotype</p>
-              <p className="mt-1 font-display text-base font-semibold capitalize text-white">
-                {lastResult?.classification?.classification || 'Pending Intake'}
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <p className="text-xs text-slate-500">Primary Phenotype</p>
+              <p className="mt-1 font-display text-base font-semibold capitalize text-slate-900">
+                {hasCompletedAssessment ? (lastResult?.classification?.classification || 'Assessed') : 'Pending Intake'}
               </p>
-            </GlassCard>
+            </div>
 
-            <GlassCard className="p-4">
-              <p className="text-xs text-slate-400">Body Mass Index</p>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <p className="text-xs text-slate-500">Body Mass Index</p>
               <div className="mt-1 flex items-center gap-2">
-                <span className="font-display text-base font-semibold text-white">
+                <span className="font-display text-base font-semibold text-slate-900">
                   {bmi ? `${bmi} kg/m²` : 'Not entered'}
                 </span>
                 {bmi && (
@@ -492,471 +545,171 @@ export default function Dashboard({ initialTab }) {
                   </span>
                 )}
               </div>
-            </GlassCard>
+            </div>
 
-            <GlassCard className="p-4">
-              <p className="text-xs text-slate-400">Regional Cuisine</p>
-              <p className="mt-1 font-display text-base font-semibold text-white">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+              <p className="text-xs text-slate-500">Regional Cuisine</p>
+              <p className="mt-1 font-display text-base font-semibold text-slate-900">
                 {profileData.region_preference}
               </p>
-            </GlassCard>
+            </div>
           </div>
 
-          {/* Main Phenotype Report or Call to Action */}
-          <div className="grid gap-6 lg:grid-cols-12">
-            <div className="lg:col-span-7">
-              <GlassCard strong className="p-6 sm:p-8 h-full flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full border border-bio-400/30 bg-bio-500/10 px-3 py-1 text-xs font-semibold text-bio-200">
-                      Phenotypic Root Cause Analysis
-                    </span>
-                    {lastResult && (
-                      <span className="text-xs text-slate-400">
-                        Evaluated {new Date(lastResult.created_at).toLocaleDateString()}
+          {!hasCompletedAssessment ? (
+            <div className="rounded-3xl border border-slate-200 bg-white p-8 sm:p-12 text-center shadow-xs">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-[#E11D48] border border-rose-200 mb-4">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+              </div>
+              <h2 className="font-heading text-xl sm:text-2xl font-semibold text-[#202321]">
+                Complete Your Assessment
+              </h2>
+              <p className="mx-auto mt-2 max-w-md text-xs sm:text-sm text-[#626762] leading-relaxed">
+                Unlock your phenotype breakdown, biomarker radar, and personalized nutrition plan.
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-3">
+                <Link
+                  to="/assessment"
+                  className="btn-primary !px-5 !py-2.5 text-xs font-semibold rounded-full shadow-md"
+                >
+                  Take Assessment
+                </Link>
+              </div>
+            </div>
+          ) : (
+            /* Main Phenotype Report or Call to Action */
+            <div className="grid gap-6 lg:grid-cols-12">
+              <div className="lg:col-span-7">
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 h-full flex flex-col justify-between shadow-sm">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+                        Phenotypic Root Cause Analysis
                       </span>
+                      {lastResult && (
+                        <span className="text-xs text-slate-500">
+                          Evaluated {new Date(lastResult.created_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+
+                    <h2 className="mt-4 font-display text-2xl font-bold text-slate-900 sm:text-3xl">
+                      {lastResult
+                        ? `${meta.label} (${meta.tag})`
+                        : 'Complete the Clinical Questionnaire'}
+                    </h2>
+
+                    <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                      {lastResult
+                        ? meta.desc
+                        : 'Our clinical rule engine uses your biomarkers and symptoms across 7 categories to classify you into one of 4 phenotypes: Metabolic, Hormonal, Inflammatory, or Adrenal.'}
+                    </p>
+
+                    {lastResult && (
+                      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {['adrenal', 'hormonal', 'inflammatory', 'metabolic'].map((phenoKey) => {
+                          const pct = lastResult.scores?.[phenoKey]?.percentage ?? 0
+                          const isPrimary = primaryPhenotype === phenoKey
+                          return (
+                            <div
+                              key={phenoKey}
+                              className={`rounded-xl border p-3 text-center transition-all ${
+                                isPrimary
+                                  ? 'border-rose-300 bg-rose-50/70 shadow-xs'
+                                  : 'border-slate-200 bg-slate-50/70'
+                              }`}
+                            >
+                              <span className="text-xs font-semibold capitalize text-slate-600">
+                                {phenoKey}
+                              </span>
+                              <p className="mt-1 font-display text-lg font-bold text-slate-900">
+                                {pct}%
+                              </p>
+                              {isPrimary && (
+                                <span className="text-[10px] uppercase font-bold text-rose-600">
+                                  Primary Driver
+                                </span>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
                     )}
                   </div>
 
-                  <h2 className="mt-4 font-display text-2xl font-bold text-white sm:text-3xl">
-                    {lastResult
-                      ? `${meta.label} (${meta.tag})`
-                      : 'Complete the Clinical Questionnaire'}
-                  </h2>
-
-                  <p className="mt-3 text-sm leading-relaxed text-slate-300">
-                    {lastResult
-                      ? meta.desc
-                      : 'Our clinical rule engine uses your biomarkers and symptoms across 7 categories to classify you into one of 4 phenotypes: Metabolic, Hormonal, Inflammatory, or Adrenal.'}
-                  </p>
-
-                  {lastResult && (
-                    <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      {['adrenal', 'hormonal', 'inflammatory', 'metabolic'].map((phenoKey) => {
-                        const pct = lastResult.scores?.[phenoKey]?.percentage ?? 0
-                        const isPrimary = primaryPhenotype === phenoKey
-                        return (
-                          <div
-                            key={phenoKey}
-                            className={`rounded-xl border p-3 text-center transition-all ${
-                              isPrimary
-                                ? 'border-bio-400/50 bg-bio-500/10 shadow-glow'
-                                : 'border-white/5 bg-white/[0.02]'
-                            }`}
-                          >
-                            <span className="text-xs font-semibold capitalize text-slate-300">
-                              {phenoKey}
-                            </span>
-                            <p className="mt-1 font-display text-lg font-bold text-white">
-                              {pct}%
-                            </p>
-                            {isPrimary && (
-                              <span className="text-[10px] uppercase font-bold text-bio-300">
-                                Primary Driver
-                              </span>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-8 flex flex-wrap gap-3 border-t border-white/5 pt-6">
-                  {lastResult?.id ? (
-                    <>
-                      <Link
-                        to={`/results/${lastResult.id}`}
-                        className="btn-primary !px-5 !py-2.5 text-xs font-semibold"
-                      >
-                        View Full Clinical Report →
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('diet')}
-                        className="btn-ghost !px-4 !py-2.5 text-xs text-bio-300"
-                      >
-                        View Nutrition Blueprint
-                      </button>
-                    </>
-                  ) : (
-                    <Link
-                      to="/assessment"
-                      className="btn-primary !px-6 !py-3 text-xs font-semibold shadow-lg shadow-bio-500/20"
-                    >
-                      Fill Clinical Assessment Questionnaire →
-                    </Link>
-                  )}
-                </div>
-              </GlassCard>
-            </div>
-
-            {/* Radar Visualizer Card */}
-            <div className="lg:col-span-5">
-              <GlassCard className="p-6 flex flex-col items-center justify-center text-center h-full">
-                <h3 className="font-display text-sm font-semibold text-slate-200 mb-2">
-                  Phenotypic Balance Radar
-                </h3>
-                {lastResult?.scores ? (
-                  <PhenotypeRadar
-                    scores={lastResult.scores}
-                    primaryPhenotype={primaryPhenotype}
-                  />
-                ) : (
-                  <div className="py-16 text-center">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-slate-500 font-mono text-xs">
-                      Radar
-                    </div>
-                    <p className="mt-3 text-xs text-slate-400 max-w-xs">
-                      Radar chart will illuminate once medical questionnaire answers or lab markers are saved.
-                    </p>
-                    <Link
-                      to="/assessment"
-                      className="btn-ghost mt-4 !px-4 !py-2 text-xs text-bio-300"
-                    >
-                      Fill Assessment Questionnaire →
-                    </Link>
-                  </div>
-                )}
-              </GlassCard>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ============================================================ */}
-      {/* TAB 3: DIET & LIFESTYLE PROTOCOL                             */}
-      {/* ============================================================ */}
-      {activeTab === 'diet' && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          <GlassCard className="p-6 sm:p-8">
-            <div className="flex flex-col justify-between gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-center">
-              <div>
-                <span className="rounded-full border border-bio-400/30 bg-bio-500/10 px-3 py-0.5 text-xs font-semibold text-bio-300 uppercase">
-                  {meta.label} Protocol
-                </span>
-                <h2 className="mt-2 font-display text-2xl font-bold text-white">
-                  Evidence-Based Clinical Protocol
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Tailored to your {profileData.region_preference} cuisine and {profileData.diet_type} preferences. Saved to <code>lifestyle_plans</code> table.
-                </p>
-              </div>
-
-              {/* Dynamic Cuisine & Diet Switcher */}
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  value={profileData.region_preference}
-                  onChange={(e) => {
-                    const newRegion = e.target.value
-                    setProfileData({ ...profileData, region_preference: newRegion })
-                    if (user?.id) updatePatientProfile(user.id, { region_preference: newRegion })
-                    if (user?.email) {
-                      saveLifestylePlan(user.email, {
-                        region_preference: newRegion,
-                        diet_type: profileData.diet_type,
-                        primary_phenotype: primaryPhenotype,
-                        dietary_strategy: currentDietProtocol?.strategy,
-                        exercise_routine: currentDietProtocol?.exercise,
-                        supplement_roadmap: currentDietProtocol?.supplements,
-                        sample_day: currentDietProtocol?.sample_day || {},
-                      })
-                    }
-                  }}
-                  className="rounded-xl border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-bio-400 focus:outline-none"
-                >
-                  <option value="South Indian">South Indian</option>
-                  <option value="North Indian">North Indian</option>
-                  <option value="East Indian">East Indian</option>
-                  <option value="West Indian">West Indian</option>
-                </select>
-
-                <select
-                  value={profileData.diet_type}
-                  onChange={(e) => {
-                    const newDiet = e.target.value
-                    setProfileData({ ...profileData, diet_type: newDiet })
-                    if (user?.id) updatePatientProfile(user.id, { diet_type: newDiet })
-                    if (user?.email) {
-                      saveLifestylePlan(user.email, {
-                        region_preference: profileData.region_preference,
-                        diet_type: newDiet,
-                        primary_phenotype: primaryPhenotype,
-                        dietary_strategy: currentDietProtocol?.strategy,
-                        exercise_routine: currentDietProtocol?.exercise,
-                        supplement_roadmap: currentDietProtocol?.supplements,
-                        sample_day: currentDietProtocol?.sample_day || {},
-                      })
-                    }
-                  }}
-                  className="rounded-xl border border-white/10 bg-slate-900 px-3 py-1.5 text-xs text-white focus:border-bio-400 focus:outline-none"
-                >
-                  <option value="Vegetarian">Vegetarian</option>
-                  <option value="Eggetarian">Eggetarian</option>
-                  <option value="Non-Vegetarian">Non-Vegetarian</option>
-                  <option value="Vegan">Vegan</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Core Strategy Cards */}
-            <div className="mt-6 grid gap-6 md:grid-cols-3">
-              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-bio-300">
-                  Nutritional Strategy
-                </h4>
-                <p className="mt-3 text-xs leading-relaxed text-slate-300">
-                  {currentDietProtocol?.strategy ||
-                    'Low glycemic carbohydrates paired with clean protein and healthy fats to stabilize insulin surges and support hormone synthesis.'}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                  Exercise Routine
-                </h4>
-                <p className="mt-3 text-xs leading-relaxed text-slate-300">
-                  {currentDietProtocol?.exercise ||
-                    'Zone 2 steady-state aerobic conditioning (30-40 mins) combined with 3 weekly resistance training sessions to stimulate GLUT-4 receptor activity.'}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-5">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-purple-300">
-                  Targeted Supplements
-                </h4>
-                <p className="mt-3 text-xs leading-relaxed text-slate-300">
-                  {currentDietProtocol?.supplements ||
-                    'Myo-Inositol + D-Chiro Inositol (40:1 ratio), Magnesium Glycinate, and Vitamin D3 (2000 IU) to promote ovulatory regularity.'}
-                </p>
-              </div>
-            </div>
-
-            {/* Meal Plan Blueprint */}
-            {currentDietProtocol?.sample_day && (
-              <div className="mt-8 border-t border-white/5 pt-6">
-                <h3 className="font-display text-lg font-semibold text-white mb-4">
-                  Full Day Meal Blueprint ({profileData.region_preference} • {profileData.diet_type})
-                </h3>
-                <div className="grid gap-3 sm:grid-cols-4">
-                  {['breakfast', 'lunch', 'snack', 'dinner'].map((meal) => (
-                    <div
-                      key={meal}
-                      className="rounded-xl border border-white/5 bg-white/[0.02] p-4 flex flex-col justify-between"
-                    >
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-bio-300">
-                        {meal}
-                      </span>
-                      <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-                        {currentDietProtocol.sample_day[meal] || 'Balanced macro portion.'}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </GlassCard>
-        </motion.div>
-      )}
-
-
-
-      {/* ============================================================ */}
-      {/* TAB 5: DAILY CYCLE & SYMPTOMS LOG                            */}
-      {/* ============================================================ */}
-      {activeTab === 'journey' && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          <GlassCard className="p-6 sm:p-8">
-            <h2 className="font-display text-2xl font-bold text-white">
-              Daily Cycle & Wellness Journal
-            </h2>
-            <p className="text-xs text-slate-400 mt-1">
-              Log daily menstrual phases, sleep quality, and physical symptoms. Saved to the <code>daily_logs</code> table in Supabase.
-            </p>
-
-            <form onSubmit={handleAddJourneyEntry} className="mt-6 space-y-4 border-b border-white/10 pb-8">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Date</label>
-                  <input
-                    type="date"
-                    value={cycleLog.date}
-                    onChange={(e) => setCycleLog({ ...cycleLog, date: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Cycle Phase</label>
-                  <select
-                    value={cycleLog.cycle}
-                    onChange={(e) => setCycleLog({ ...cycleLog, cycle: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-xs text-white"
-                  >
-                    <option value="Period">Period / Menstruation</option>
-                    <option value="Fertile window">Follicular / Fertile Window</option>
-                    <option value="Luteal phase">Luteal Phase</option>
-                    <option value="Not tracking">Not Tracking</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Sleep (hours)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={cycleLog.sleep_hours}
-                    onChange={(e) => setCycleLog({ ...cycleLog, sleep_hours: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Daily Notes</label>
-                <textarea
-                  rows={2}
-                  placeholder="How are your energy levels, food cravings, or mood today?"
-                  value={cycleLog.notes}
-                  onChange={(e) => setCycleLog({ ...cycleLog, notes: e.target.value })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-bio-400"
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button type="submit" className="btn-primary !px-5 !py-2 text-xs font-semibold">
-                  Save Today's Check-in
-                </button>
-                {journeySavedNotice && (
-                  <span className="text-xs text-bio-300 font-semibold">Saved to daily logs.</span>
-                )}
-              </div>
-            </form>
-
-            <div className="mt-6">
-              <h3 className="font-display text-sm font-semibold text-slate-200 mb-3">
-                Recent Journal Entries
-              </h3>
-              {journeyEntries.length === 0 ? (
-                <p className="text-xs text-slate-500">No entries yet. Save your first check-in above.</p>
-              ) : (
-                <div className="space-y-2">
-                  {journeyEntries.slice(0, 5).map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.01] p-3 text-xs"
-                    >
-                      <div>
-                        <span className="font-semibold text-white">{entry.date}</span>
-                        <span className="text-slate-400 ml-2">({entry.cycle_phase || entry.cycle} • {entry.sleep_hours || '-'}h sleep)</span>
-                        {entry.notes && <p className="text-slate-300 mt-1">{entry.notes}</p>}
-                      </div>
-                      <button
-                        onClick={() => handleDeleteJourneyEntry(entry.id)}
-                        className="text-slate-500 hover:text-rose-400 text-[11px]"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </GlassCard>
-        </motion.div>
-      )}
-
-      {/* ============================================================ */}
-      {/* TAB 6: PAST SUBMISSIONS & HISTORY                            */}
-      {/* ============================================================ */}
-      {activeTab === 'history' && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          <GlassCard className="p-6 sm:p-8">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <div>
-                <h2 className="font-display text-2xl font-bold text-white">
-                  Assessment History
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  All past diagnostic assessments saved in your Supabase <code>submissions</code> table.
-                </p>
-              </div>
-              <Link
-                to="/assessment"
-                className="btn-primary !px-4 !py-2 text-xs font-semibold"
-              >
-                + New Assessment
-              </Link>
-            </div>
-
-            {loadingSubmissions ? (
-              <div className="py-12 text-center text-xs text-slate-400">
-                Loading history from Supabase…
-              </div>
-            ) : submissions.length === 0 ? (
-              <div className="py-12 text-center">
-                <p className="text-xs text-slate-400">No records found yet.</p>
-                <Link
-                  to="/assessment"
-                  className="btn-primary mt-4 inline-flex !px-5 !py-2 text-xs font-semibold"
-                >
-                  Take Your First Assessment
-                </Link>
-              </div>
-            ) : (
-              <div className="mt-6 space-y-3">
-                {submissions.map((sub, idx) => {
-                  const date = sub.created_at
-                    ? new Date(sub.created_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })
-                    : 'Recent'
-                  const diagnosis =
-                    sub.classification?.classification || 'Diagnostic Complete'
-
-                  return (
-                    <div
-                      key={sub.id || idx}
-                      className="flex flex-col justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-4 sm:flex-row sm:items-center hover:border-white/10 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-bio-400/30 bg-bio-500/10 font-mono text-xs font-bold text-bio-300">
-                          #{submissions.length - idx}
-                        </div>
-                        <div>
-                          <p className="font-medium text-white text-sm">{diagnosis}</p>
-                          <span className="text-xs text-slate-400">Taken on {date}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
+                  <div className="mt-8 flex flex-wrap gap-3 border-t border-slate-100 pt-6">
+                    {lastResult?.id ? (
+                      <>
                         <Link
-                          to={`/results/${sub.id}`}
-                          className="btn-ghost !px-4 !py-2 text-xs text-bio-300 hover:text-white"
+                          to={`/results/${lastResult.id}`}
+                          className="btn-primary !px-5 !py-2.5 text-xs font-semibold"
                         >
-                          View Diagnostic Report →
+                          View Full Clinical Report
                         </Link>
-                      </div>
-                    </div>
-                  )
-                })}
+                        <Link
+                          to="/diet"
+                          className="btn-ghost !px-4 !py-2.5 text-xs text-purple-700 hover:text-purple-900 font-semibold"
+                        >
+                          View Nutrition Blueprint
+                        </Link>
+                      </>
+                    ) : (
+                      <Link
+                        to="/assessment"
+                        className="btn-primary !px-6 !py-3 text-xs font-semibold shadow-md"
+                      >
+                        Fill Clinical Assessment Questionnaire
+                      </Link>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
-          </GlassCard>
+
+              {/* Radar Visualizer Card */}
+              <div className="lg:col-span-5">
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 flex flex-col items-center justify-center text-center h-full shadow-sm">
+                  <h3 className="font-display text-sm font-semibold text-slate-800 mb-2">
+                    Phenotypic Balance Radar
+                  </h3>
+                  {lastResult?.scores ? (
+                    <PhenotypeRadar
+                      scores={lastResult.scores}
+                      primaryPhenotype={primaryPhenotype}
+                    />
+                  ) : (
+                    <div className="py-16 text-center">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-slate-500 font-mono text-xs">
+                        Radar
+                      </div>
+                      <p className="mt-3 text-xs text-slate-400 max-w-xs">
+                        Radar chart will illuminate once medical questionnaire answers or lab markers are saved.
+                      </p>
+                      <Link
+                        to="/assessment"
+                        className="btn-ghost mt-4 !px-4 !py-2 text-xs text-rose-600"
+                      >
+                        Fill Assessment Questionnaire
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </motion.div>
-      )}
+
+        {/* ============================================================ */}
+        {/* INTERACTIVE LOG ANALYSIS & GRAPH TRACKERS SECTION            */}
+        {/* ============================================================ */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="mt-12 pt-10 border-t border-slate-200"
+        >
+          <UnifiedLogDashboard userEmail={user?.email} />
+        </motion.div>
     </div>
   )
 }
